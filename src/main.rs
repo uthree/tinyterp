@@ -1,10 +1,6 @@
-mod ast;
-mod compiler;
-mod grammar;
-mod runtime;
+mod core;
 
-use crate::runtime::Runtime;
+use crate::core::parser::tinyterp::program as parse;
 fn main() {
-    let r = Runtime::new();
-    r.execute_code("112");
+    println!("{:?}", parse("a+b+c+d*e"));
 }
