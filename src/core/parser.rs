@@ -57,6 +57,7 @@ peg::parser! {
         rule atom() -> Node
             = identifier()
             / integer_literal()
+            / _ "(" _ e:expression() _ ")" _ { e }
 
         rule identifier() -> Node
             = _ name:$(['a'..='z']+) _ { Node::Identifier(name.to_string())}
