@@ -10,7 +10,16 @@ pub enum Variable {
 
 impl std::ops::Add for Variable {
     type Output = Variable;
-    fn add() -> Variable {}
+    fn add(self, other: Variable) -> Variable {
+        match self {
+            Variable::Integer(s) => match other {
+                Variable::Integer(o) => Variable::Integer(s + o),
+                _ => {
+                    panic!("TypeError");
+                }
+            },
+        }
+    }
 }
 
 #[derive(Debug)]
