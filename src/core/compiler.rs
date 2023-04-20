@@ -15,7 +15,21 @@ pub fn compile(node: Node) -> Vec<Instruction> {
             insts.append(&mut compile(*v2));
             insts.push(Instruction::Add);
         }
-
+        Node::OperatorSub(v1, v2) => {
+            insts.append(&mut compile(*v1));
+            insts.append(&mut compile(*v2));
+            insts.push(Instruction::Sub);
+        }
+        Node::OperatorMul(v1, v2) => {
+            insts.append(&mut compile(*v1));
+            insts.append(&mut compile(*v2));
+            insts.push(Instruction::Mul);
+        }
+        Node::OperatorDiv(v1, v2) => {
+            insts.append(&mut compile(*v1));
+            insts.append(&mut compile(*v2));
+            insts.push(Instruction::Div);
+        }
         _ => {}
     }
     insts
