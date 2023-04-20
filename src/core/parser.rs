@@ -43,11 +43,11 @@ peg::parser! {
 
         #[cache_left_rec]
         rule term() -> Node
-            = _ l:atom() _ "*" _ r:atom() _ {
+            = _ l:term() _ "*" _ r:atom() _ {
                 Node::OperatorMul(
                     Box::new(l), Box::new(r))
             }
-            / _ l:atom() _ "/" _ r:atom() _ {
+            / _ l:term() _ "/" _ r:atom() _ {
                 Node::OperatorDiv(
                     Box::new(l), Box::new(r))
             }
