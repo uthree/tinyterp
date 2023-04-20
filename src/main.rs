@@ -1,6 +1,7 @@
 mod core;
 
-use crate::core::parser::tinyterp::program as parse;
+use crate::core::runtime::Runtime;
 fn main() {
-    println!("{:?}", parse("a+b+c+d*e"));
+    let mut rt = Runtime::new();
+    println!("{:?}", rt.execute("1+2"));
 }
