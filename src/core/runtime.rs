@@ -56,6 +56,7 @@ impl Runtime {
                     let v2 = self.stack.pop().unwrap();
                     let v1 = self.stack.pop().unwrap();
                     let v_out = v2 + v1;
+                    self.stack.push(v_out);
                 }
                 _ => {}
             }
