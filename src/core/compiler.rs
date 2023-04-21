@@ -30,6 +30,9 @@ pub fn compile(node: Node) -> Vec<Instruction> {
             insts.append(&mut compile(*v2));
             insts.push(Instruction::Div);
         }
+        Node::Assign(identifier, value) => {
+            insts.append(&mut compile(*value));
+        }
         _ => {}
     }
     insts
