@@ -43,15 +43,16 @@ peg::parser!(pub grammar tinyterp() for str {
         }
         / i:identifier() { vec![i] }
     rule expression() -> Node
-        = arithmetic()
+        = precedence! {
+            l:(@) _ "==" _ r:@ { Node::DoubleEqual(Box::new(l), Box::new(r)) }
+            l:(@) _ "<" _ r:@ { Node::LessThan(Box::new(l), Box::new(r)) }
+            l:(@) _ ">" _ r:@ { Node::GreaterThan(Box::new(l), Box::new(r)) }
+            l:(@) _ "<=" _ r:@ { Node::LessThanEqual(Box::new(l), Box::new(r)) }
+            l:(@) _ ">=" _ r:@ { Node::GreaterThanEqual(Box::new(l), Box::new(r)) }
+        }
+        / arithmetic()
     #[cache_left_rec]
     rule arithmetic() -> Node = precedence! {
-        l:(@) _ "==" _ r:@ { Node::DoubleEqual(Box::new(l), Box::new(r)) }
-        l:(@) _ "<" _ r:@ { Node::LessThan(Box::new(l), Box::new(r)) }
-        l:(@) _ ">" _ r:@ { Node::GreaterThan(Box::new(l), Box::new(r)) }
-        l:(@) _ "<=" _ r:@ { Node::LessThanEqual(Box::new(l), Box::new(r)) }
-        l:(@) _ ">=" _ r:@ { Node::GreaterThanEqual(Box::new(l), Box::new(r)) }
-        --
         l:(@) _  "*" _ r:@ { Node::Mul(Box::new(l), Box::new(r)) }
         l:(@) _ "/" _ r:@ { Node::Div(Box::new(l), Box::new(r)) }
         --
