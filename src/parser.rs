@@ -16,6 +16,8 @@ pub enum Node {
     GreaterThanEqual(Box<Node>, Box<Node>),
     Assign(Vec<Node>, Vec<Node>),
     Identifier(String),
+    If(Box<Node>, Box<Node>),
+    IfElse(Box<Node>, Box<Node>),
 }
 
 peg::parser!(pub grammar tinyterp() for str {
@@ -23,12 +25,17 @@ peg::parser!(pub grammar tinyterp() for str {
     #[cache_left_rec]
     pub rule program() -> Node
         = statement()
-        / expression()
 
+    #[cache_left_rec]
     rule statement() -> Node
-        = ls:identifiers() "=" rs:expressions() {
+        = ls:identifiers() _ "=" _ rs:expressions() {
             Node::Assign(ls, rs)
         }
+        / "if" _ cond:expression() _ expr:expression() {
+            Node::If(Box::new(cond), Box::new(expr))
+        }
+        / expression()
+
     #[cache_left_rec]
     rule expressions() -> Vec<Node>
         = l:expressions() _ "," _ r:expression() {
@@ -42,17 +49,18 @@ peg::parser!(pub grammar tinyterp() for str {
             {let mut out = l.clone(); out.push(r); out}
         }
         / i:identifier() { vec![i] }
+
     rule expression() -> Node
-        = precedence! {
-            l:(@) _ "==" _ r:@ { Node::DoubleEqual(Box::new(l), Box::new(r)) }
-            l:(@) _ "<" _ r:@ { Node::LessThan(Box::new(l), Box::new(r)) }
-            l:(@) _ ">" _ r:@ { Node::GreaterThan(Box::new(l), Box::new(r)) }
-            l:(@) _ "<=" _ r:@ { Node::LessThanEqual(Box::new(l), Box::new(r)) }
-            l:(@) _ ">=" _ r:@ { Node::GreaterThanEqual(Box::new(l), Box::new(r)) }
-        }
-        / arithmetic()
+        = operators()
+
     #[cache_left_rec]
-    rule arithmetic() -> Node = precedence! {
+    rule operators() -> Node = precedence! {
+        l:(@) _ "==" _ r:@ { Node::DoubleEqual(Box::new(l), Box::new(r)) }
+        l:(@) _ "<" _ r:@ { Node::LessThan(Box::new(l), Box::new(r)) }
+        l:(@) _ ">" _ r:@ { Node::GreaterThan(Box::new(l), Box::new(r)) }
+        l:(@) _ "<=" _ r:@ { Node::LessThanEqual(Box::new(l), Box::new(r)) }
+        l:(@) _ ">=" _ r:@ { Node::GreaterThanEqual(Box::new(l), Box::new(r)) }
+        --
         l:(@) _  "*" _ r:@ { Node::Mul(Box::new(l), Box::new(r)) }
         l:(@) _ "/" _ r:@ { Node::Div(Box::new(l), Box::new(r)) }
         --
