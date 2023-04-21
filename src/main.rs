@@ -1,11 +1,6 @@
-mod core;
+mod parser;
 
-use crate::core::runtime::Runtime;
+use parser::tinyterp::program as parse;
 fn main() {
-    let mut rt = Runtime::new();
-    loop {
-        let mut inst = String::new();
-        std::io::stdin().read_line(&mut inst).unwrap();
-        println!("{:?}", rt.execute(&inst));
-    }
+    println!("{:?}", parse("a, b = 1, 2"));
 }
