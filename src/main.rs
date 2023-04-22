@@ -2,5 +2,9 @@ mod parser;
 
 use parser::tinyterp::program as parse;
 fn main() {
-    println!("{:?}", parse("if 1<2 2"));
+    loop {
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        println!("{:?}", parse(&input));
+    }
 }
