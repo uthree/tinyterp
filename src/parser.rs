@@ -25,6 +25,9 @@ pub enum Node {
     IfElse(Box<Node>, Box<Node>, Box<Node>),
     While(Box<Node>),
     Sequence(Vec<Node>),
+    KeywordExpression(String, Box<Node>),
+    KeywordExpressions(Vec<Node>),
+    CallFunction(Box<Node>, Vec<Node>, Box<Node>),
 }
 
 peg::parser!(pub grammar tinyterp() for str {
@@ -47,10 +50,10 @@ peg::parser!(pub grammar tinyterp() for str {
 
     #[cache_left_rec]
     rule statements() -> Vec<Node>
-        = _ l:statements() _ newline()+ _ r:statement() _ {
+        = _ l:statements() _ newline()+ _ r:statement() _ newline()* _ {
             let mut out = l.clone(); out.push(r); out
         }
-        / i:statement() { vec![i] }
+        / i:statement() _ newline()* { vec![i] }
 
     #[cache_left_rec]
     rule statement() -> Node
@@ -64,6 +67,31 @@ peg::parser!(pub grammar tinyterp() for str {
             Node::If(Box::new(cond), Box::new(expr))
         }
         / expression()
+
+    #[cache_left_rec]
+    rule keyword_expressions() -> Node
+        = exprs:keyword_expressions_vec() {
+            Node::KeywordExpressions(exprs)
+        }
+
+    #[cache_left_rec]
+    rule keyword_expressions_vec() -> Vec<Node>
+        = _ l:keyword_expressions_vec() _ "," _ r:keyword_expression() _ {
+            let mut out = l.clone(); out.push(r); out
+        }
+        / _ expr:keyword_expression() _ {
+            vec![expr]
+        }
+        / _ {
+            vec![]
+        }
+
+    #[cache_left_rec]
+    rule keyword_expression() -> Node
+        = kw:['a'..='z' | 'A'..='Z']+ _ ":" _ val:expression() {
+            let keyword = kw.iter().collect();
+            Node::KeywordExpression(keyword, Box::new(val))
+        }
 
     #[cache_left_rec]
     rule expressions() -> Vec<Node>
@@ -80,7 +108,19 @@ peg::parser!(pub grammar tinyterp() for str {
         / i:identifier() { vec![i] }
 
     rule expression() -> Node
-        = operators()
+        = call_function()
+        / operators()
+
+    rule call_function() -> Node
+        = _ function_name:identifier() _ "(" _ pos_args:expressions() _ kw_args:keyword_expressions() _ ")" _ {
+            Node::CallFunction(Box::new(function_name), pos_args, Box::new(kw_args))
+        }
+        / _ function_name:identifier() _ "(" _ kw_args:keyword_expressions() _ ")" _ {
+            Node::CallFunction(Box::new(function_name), vec![], Box::new(kw_args))
+        }
+        / function_name:identifier() _ "(" _ ")" _ {
+            Node::CallFunction(Box::new(function_name), vec![], Box::new(Node::KeywordExpressions(vec![])))
+        }
 
     #[cache_left_rec]
     rule operators() -> Node = precedence! {

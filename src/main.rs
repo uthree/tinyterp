@@ -1,4 +1,6 @@
+mod object;
 mod parser;
+mod runtime;
 
 use parser::tinyterp::program as parse;
 fn main() {
