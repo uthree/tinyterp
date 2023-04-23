@@ -84,6 +84,9 @@ peg::parser!(pub grammar tinyterp() for str {
 
     #[cache_left_rec]
     rule operators() -> Node = precedence! {
+        _ "[" _  exprs:expressions() _ "]" _  {Node::List(exprs)}
+        _ "[" _ "]" _ {Node::List(vec![])}
+        --
         l:(@) _ "and" _ r:@ { Node::LogicalAnd(Box::new(l), Box::new(r)) }
         l:(@) _ "or" _ r:@ { Node::LogicalOr(Box::new(l), Box::new(r)) }
         "not" _ e:@ { Node::LogicalNot(Box::new(e))}
