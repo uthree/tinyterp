@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-struct TypeError {}
+#[derive(Debug)]
+pub struct TypeError {}
 
-enum Object {
+#[derive(Clone, Debug)]
+pub enum Object {
     Nil,
     Bool(bool),
     Int(i64),
@@ -12,7 +14,7 @@ enum Object {
 }
 
 impl Object {
-    fn op_add(&self, other: &Object) -> Result<Object, TypeError> {
+    pub fn op_add(&self, other: &Object) -> Result<Object, TypeError> {
         match *self {
             Object::Int(s) => match *other {
                 Object::Int(o) => return Ok(Object::Int(s + o)),
@@ -28,7 +30,7 @@ impl Object {
         }
     }
 
-    fn op_sub(&self, other: &Object) -> Result<Object, TypeError> {
+    pub fn op_sub(&self, other: &Object) -> Result<Object, TypeError> {
         match *self {
             Object::Int(s) => match *other {
                 Object::Int(o) => return Ok(Object::Int(s - o)),
@@ -44,7 +46,7 @@ impl Object {
         }
     }
 
-    fn op_mul(&self, other: &Object) -> Result<Object, TypeError> {
+    pub fn op_mul(&self, other: &Object) -> Result<Object, TypeError> {
         match *self {
             Object::Int(s) => match *other {
                 Object::Int(o) => return Ok(Object::Int(s * o)),
@@ -60,7 +62,7 @@ impl Object {
         }
     }
 
-    fn op_div(&self, other: &Object) -> Result<Object, TypeError> {
+    pub fn op_div(&self, other: &Object) -> Result<Object, TypeError> {
         match *self {
             Object::Int(s) => match *other {
                 Object::Int(o) => return Ok(Object::Int(s / o)),
