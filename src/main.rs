@@ -9,6 +9,6 @@ fn main() {
     loop {
         let mut buffer = String::new();
         std::io::stdin().read_line(&mut buffer).unwrap();
-        runtime.execute(buffer);
+        println!("{:?}", runtime.execute(buffer));
     }
 }

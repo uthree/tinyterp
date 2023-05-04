@@ -23,6 +23,12 @@ peg::parser! {
             }
 
         rule integer_literal() -> Node
-            = _ n:$(['0'..='9']+) _ {Node::IntegerLiteral(String::from(n))}
+            = _ s:"-"? _ n:$(['0'..='9']+) _ {
+                if s.is_some() {
+                    Node::IntegerLiteral(String::from("-".to_string() + n))}
+                        else {
+                    Node::IntegerLiteral(String::from(n))
+                }
+            }
     }
 }

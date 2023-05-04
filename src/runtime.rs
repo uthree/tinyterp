@@ -53,12 +53,11 @@ impl Runtime {
         Ok(())
     }
 
-    pub fn execute(&mut self, code: String) {
+    pub fn execute(&mut self, code: String) -> Object {
         let mut node = parse(&code).unwrap();
         let insts = compile(node);
-        println!("{:?}", insts);
         self.push_instructions(insts);
         self.run().unwrap();
-        println!("{:?}", self.stack);
+        self.stack.pop().unwrap()
     }
 }
