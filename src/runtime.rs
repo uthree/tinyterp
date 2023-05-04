@@ -8,6 +8,8 @@ pub enum Instruction {
     Push(Object),
     Add,
     Sub,
+    Mul,
+    Div,
 }
 
 pub struct Runtime {
@@ -47,6 +49,16 @@ impl Runtime {
                     let v1 = self.stack.pop().expect("Stack underflow");
                     self.stack.push(v1.op_sub(&v2).expect("Failed to sub"));
                 }
+                Instruction::Mul => {
+                    let v2 = self.stack.pop().expect("Stack underflow");
+                    let v1 = self.stack.pop().expect("Stack underflow");
+                    self.stack.push(v1.op_mul(&v2).expect("Failed to mul"));
+                }
+                Instruction::Div => {
+                    let v2 = self.stack.pop().expect("Stack underflow");
+                    let v1 = self.stack.pop().expect("Stack underflow");
+                    self.stack.push(v1.op_div(&v2).expect("Failed to div"));
+                }
             }
             self.program_counter += 1;
         }
@@ -55,6 +67,7 @@ impl Runtime {
 
     pub fn execute(&mut self, code: String) -> Object {
         let mut node = parse(&code).unwrap();
+        println!("{:?}", node);
         let insts = compile(node);
         self.push_instructions(insts);
         self.run().unwrap();
