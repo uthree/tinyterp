@@ -1,6 +1,7 @@
-use std::collections::HashMap;
-
+use crate::compiler::compile;
 use crate::object::Object;
+use crate::parser::tinyterp::program as parse;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub enum Instruction {
@@ -44,5 +45,12 @@ impl Runtime {
             self.program_counter += 1;
         }
         Ok(())
+    }
+
+    pub fn execute(&mut self, code: String) {
+        let mut node = parse(&code).unwrap();
+        let insts = compile(node);
+        self.push_instructions(insts);
+        self.run();
     }
 }

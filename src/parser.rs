@@ -7,18 +7,20 @@ pub enum Node {
 }
 
 peg::parser! {
-    grammar tinyterp() for str {
+    pub grammar tinyterp() for str {
+        rule _ =
+            [' '|'\n']+
         pub rule program() -> Node
-            = expression()
+            = _ e:expression() _ {e}
 
-        pub rule expression() -> Node
+        rule expression() -> Node
             = precedence! {
-                l:(@) "+" r:@ {Node::Add(Box::new(l), Box::new(r))}
+                l:(@) _ "+" _ r:@ {Node::Add(Box::new(l), Box::new(r))}
                 --
                 i: integer_literal() {i}
             }
 
-        pub rule integer_literal() -> Node
-            = n:$(['0'..='9']+) {Node::IntegerLiteral(String::from(n))}
+        rule integer_literal() -> Node
+            = _ n:$(['0'..='9']+) _ {Node::IntegerLiteral(String::from(n))}
     }
 }
