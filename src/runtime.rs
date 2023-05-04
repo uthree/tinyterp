@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub enum Instruction {
     Push(Object),
     Add,
+    Sub,
 }
 
 pub struct Runtime {
@@ -37,9 +38,14 @@ impl Runtime {
                     self.stack.push(obj.clone());
                 }
                 Instruction::Add => {
-                    let v1 = self.stack.pop().expect("Stack underflow");
                     let v2 = self.stack.pop().expect("Stack underflow");
+                    let v1 = self.stack.pop().expect("Stack underflow");
                     self.stack.push(v1.op_add(&v2).expect("Failed to add"));
+                }
+                Instruction::Sub => {
+                    let v2 = self.stack.pop().expect("Stack underflow");
+                    let v1 = self.stack.pop().expect("Stack underflow");
+                    self.stack.push(v1.op_sub(&v2).expect("Failed to sub"));
                 }
             }
             self.program_counter += 1;
@@ -50,7 +56,9 @@ impl Runtime {
     pub fn execute(&mut self, code: String) {
         let mut node = parse(&code).unwrap();
         let insts = compile(node);
+        println!("{:?}", insts);
         self.push_instructions(insts);
-        self.run();
+        self.run().unwrap();
+        println!("{:?}", self.stack);
     }
 }
