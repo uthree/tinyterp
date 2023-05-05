@@ -28,6 +28,8 @@ peg::parser! {
                 f: float_literal() {f}
                 --
                 i: integer_literal() {i}
+                --
+                "(" e:expression() ")" {e}
             }
 
         rule integer_literal() -> Node
