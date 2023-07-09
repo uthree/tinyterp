@@ -277,7 +277,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule logical_not() -> Node
-            =  _ begin:position!() keyword_not() _ v:expression() end:position!() _ {
+            =  _ begin:position!() keyword_not() _ v:compare() end:position!() _ {
                 Node::LogicalNot(Box::new(v), Position::new(begin, end))
             }
             / compare()
