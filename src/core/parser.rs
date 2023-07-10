@@ -192,11 +192,34 @@ peg::parser! {
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
-        // todo fix: Can't parse "\""
+        #[cache_left_rec]
+        rule escaped_char() -> char
+            = "\\\\" {
+                '\\'
+            }
+            / "\\\"" {
+                '\"'
+            }
+            / "\\n" {
+                '\n'
+            }
+            / "\\" c:[^'\"'] {
+                c
+            }
+            / c:[^'\"'] {
+                c
+            }
+
+        #[cache_left_rec]
+        rule parse_string() -> String
+            = chars:escaped_char()* {
+                chars.iter().collect()
+            }
+
         #[cache_left_rec]
         rule string_literal() -> Node
-            = _ begin:position!() "\"" s:$([^'\"']*) "\"" end:position!() _ {
-                Node::StringLiteral(s.to_string(), Position::new(begin, end))
+            = _ begin:position!() "\"" s:parse_string() "\"" end:position!() _ {
+                Node::StringLiteral(s, Position::new(begin, end))
             }
 
         #[cache_left_rec]
