@@ -178,7 +178,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule assign_right() -> Vec<Node>
-            = function() ++ (_ comma() _)
+            = expression() ++ (_ comma() _)
 
         #[cache_left_rec]
         rule assign() -> Node
@@ -331,7 +331,7 @@ peg::parser! {
             = _ begin:position!() left:number_with_pow() _ operator_pow() _ right:call_function() end:position!() _ {
                 Node::Pow(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() operator_sub() _ value:atom() end:position!() _ {
+            / _ begin:position!() operator_sub() _ value:call_function() end:position!() _ {
                 Node::Neg(Box::new(value), Position::new(begin, end))
             }
             / call_function()
@@ -370,7 +370,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule call_function() -> Node
-            = _ begin:position!() callable:call_function() left_paren() args:arguments() right_paren() end:position!() {
+            = _ begin:position!() callable:call_function() left_paren() args:arguments() right_paren() end:position!() _ {
                 let (v, h) = args;
                 Node::CallFunction {
                     callable: Box::new(callable),
@@ -404,6 +404,5 @@ peg::parser! {
             / _ begin:position!() left_paren() _ expression:expression() _ right_paren() end:position!() _ {
                 expression
             }
-            / expression()
     }
 }
