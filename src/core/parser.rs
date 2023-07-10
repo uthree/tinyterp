@@ -20,6 +20,10 @@ pub enum Node {
     IntegerLiteral(i64, Position),
     FloatLiteral(f64, Position),
     StringLiteral(String, Position),
+    Nil(Position),
+    Bool(bool, Position),
+    List(Vec<Node>, Position),
+    Hash(Vec<(Node, Node)>, Position),
 
     // Operators
     Neg(Box<Node>, Position),
@@ -67,17 +71,21 @@ pub enum Node {
     GetAttribute(Box<Node>, Box<Node>, Position),
 
     Assign(Vec<String>, Vec<Node>, Position),
-    If(Box<Node>, Box<Node>, Position),
-    IfElse(Box<Node>, Box<Node>, Position),
+    IfElse(Box<Node>, Box<Node>, Box<Node>, Position),
     Return(Box<Node>, Position),
-    Break(Box<Node>, Position),
+    Drop(Vec<String>, Position),
     Loop(Vec<Node>, Position),
 }
+
+const reserved_words: [&str; 11] = [
+    "if", "then", "else", "not", "and", "or", "return", "nil", "true", "false", "drop",
+];
 
 peg::parser! {
     pub grammar tinyterp() for str {
         rule newline() = ['\n' | ';']+
-        rule _ = [' ' | '\n' | '\t']*
+        rule _ ="#" ([^'\n'])* "\n"
+            / [' ' | '\n' | '\t']*
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -113,7 +121,11 @@ peg::parser! {
         rule keyword_and() = "and"
         rule keyword_or() = "or"
         rule keyword_return() = "return"
-        rule keyword_break() = "break"
+        rule keyword_nil() = "nil"
+        rule keyword_true() = "true"
+        rule keyword_false() = "false"
+        rule keyword_loop() = "loop"
+        rule keyword_drop() = "drop"
 
         // Literals
         #[cache_left_rec]
@@ -140,11 +152,44 @@ peg::parser! {
                 }
             }
 
+        // Nil
+        #[cache_left_rec]
+        rule nil_literal() -> Node
+            = _ begin:position!()  keyword_nil() end:position!() _ {
+                Node::Nil(Position::new(begin, end))
+            }
+            / _ begin:position!()  left_paren() _ right_paren() end:position!() _ {
+                Node::Nil(Position::new(begin, end))
+            }
+
+        // Boolean
+        #[cache_left_rec]
+        rule bool_literal() -> Node
+            = begin:position!() keyword_true() end:position!() {
+                Node::Bool(true, Position::new(begin, end))
+            }
+            / begin:position!() keyword_false() end:position!() {
+                Node::Bool(false, Position::new(begin, end))
+            }
+
         // ientifier
         #[cache_left_rec]
         rule identifier() -> Node
-            = _ begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() _ {
-                Node::Identifier(format!("{}{}", name_initial, name), Position::new(begin, end))
+            = _ begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() _ {?
+                let name = format!("{}{}", name_initial, name);
+                if reserved_words.iter().find(|w| ***w == name).is_some() {
+                    Err("that name is reserved.")
+                }
+                else {
+                    Ok(Node::Identifier(name, Position::new(begin, end)))
+                }
+            }
+
+        // Statements
+        #[cache_left_rec]
+        pub rule program() -> Node
+            = _ begin:position!() _ newline()*  _  seq:(expression() ** (_ newline() _)) _ newline()* end:position!() _ {
+                Node::Sequence(seq, Position::new(begin, end))
             }
 
         // todo fix: Can't parse "\""
@@ -155,9 +200,46 @@ peg::parser! {
             }
 
         #[cache_left_rec]
-        pub rule expression() -> Node
-            = assign()
+        rule expression() -> Node
+            = return_or_drop()
 
+        #[cache_left_rec]
+        rule return_or_drop() -> Node
+            = _ begin:position!() keyword_return() _ expr:sequence() end:position!() _ {
+                Node::Return(Box::new(expr), Position::new(begin, end))
+            }
+            / _ begin:position!() keyword_return() end:position!() _ {
+                Node::Return(Box::new(Node::Nil(Position::new(begin, end))), Position::new(begin, end))
+            }
+            / _ begin:position!() keyword_drop() _ identifiers:(identifier() ++ (_ comma() _)) _ end:position!() _ {
+                let mut variable_names = vec![];
+                for identifier in identifiers {
+                    if let Node::Identifier(s, _) = identifier {
+                        variable_names.push(s)
+                    }
+                    else {
+                        panic!("parse error")
+                    }
+                }
+                Node::Drop(variable_names, Position::new(begin, end))
+            }
+            / sequence()
+
+        // Statements
+        #[cache_left_rec]
+        rule sequence() -> Node
+            = begin:position!() _ left_brace() _ right_brace() end:position!() {
+                Node::Hash(vec![], Position::new(begin, end))
+            }
+            / _ begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+                Node::Sequence(seq, Position::new(begin, end))
+            }
+            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+                Node::Loop(seq, Position::new(begin, end))
+            }
+            / assign()
+
+        // variable name for assign
         #[cache_left_rec]
         rule variable_name() -> String
             = v:identifier() {
@@ -190,74 +272,15 @@ peg::parser! {
                     Err("The number on the right side and the left side must be the same.")
                 }
             }
-            / function()
-
-        // Function Literal
-        #[cache_left_rec]
-        rule argument_signature() -> (String, Option<Node>)
-            = _ key:identifier() _ equal() _ value:(expression()) {
-                if let Node::Identifier(key_string, _) = key {
-                    (key_string, Some(value))
-                }
-                else {
-                    panic!("parse error")
-                }
-            }
-            / _ key:identifier() !equal() {
-                if let Node::Identifier(key_string, _) = key {
-                    (key_string, None)
-                }
-                else {
-                    panic!("parse error")
-                }
-            }
+            / ifelse()
 
         #[cache_left_rec]
-        rule arguments_signature() -> (Vec<String>, HashMap<String, Node>)
-            = args:(argument_signature() ** (_ comma() _)) {
-                let mut args_vec = vec![];
-                let mut kwargs_hash = HashMap::new();
-                for arg in args {
-                    let (k, v) = arg;
-                    if v.is_some() {
-                        kwargs_hash.insert(k, v.unwrap());
-                    }
-                    else {
-                        args_vec.push(k);
-                    }
-                }
-                (args_vec, kwargs_hash)
+        rule ifelse() -> Node
+            = _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() _ keyword_else() _ expr_false:expression() end:position!() _ {
+                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
             }
-
-        #[cache_left_rec]
-        rule function() -> Node
-            = _ begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() seq:sequence() _ end:position!() _ {
-                match seq {
-                    Node::Sequence(s, _) => {
-                        let seq = s;
-                        let (args, kwargs) = args;
-                        Node::Function {
-                            arguments: args,
-                            keyword_arguments: kwargs,
-                            sequence: seq,
-                            position: Position::new(begin, end)
-                        }
-                    }
-                    _ => {
-                        panic!("parse error")
-                    }
-                }
-            }
-            / sequence()
-
-        // Statements
-        #[cache_left_rec]
-        rule sequence() -> Node
-            = _ begin:position!() left_brace() _ newline()*  _  seq:(logical_or() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
-                Node::Sequence(seq, Position::new(begin, end))
-            }
-            / _ begin:position!() left_brace() _ newline()*  _ right_brace() end:position!() _ {
-                Node::Sequence(vec![], Position::new(begin, end))
+            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() end:position!() _ {
+                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
             / logical_or()
 
@@ -370,7 +393,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule call_function() -> Node
-            = _ begin:position!() callable:call_function() left_paren() args:arguments() right_paren() end:position!() _ {
+            = _ begin:position!() callable:call_function() left_paren() _ args:arguments() _ right_paren() end:position!() _ {
                 let (v, h) = args;
                 Node::CallFunction {
                     callable: Box::new(callable),
@@ -393,6 +416,101 @@ peg::parser! {
                 }
                 Node::GetAttribute(Box::new(reciever), Box::new(Node::StringLiteral(attr_name, Position::new(begin, end))), Position::new(begin, end))
             }
+            / begin:position!() reciever:get_attr() _ left_bracket() _ expr:expression()  _ right_bracket() _ end:position!() {
+                Node::GetAttribute(Box::new(reciever), Box::new(expr), Position::new(begin, end))
+            }
+            / begin:position!() reciever:get_attr() _ left_bracket() _ elements:(expression() ** (_ comma() _))  _ right_bracket() _ end:position!() {
+                Node::GetAttribute(Box::new(reciever), Box::new(Node::List(elements, Position::new(begin, end))), Position::new(begin, end))
+            }
+            / hash()
+
+        #[cache_left_rec]
+        rule hash_element() -> (Node, Node)
+            = _ key:expression() _ right_arrow() _ value:expression() _ {
+                (key, value)
+            }
+
+        #[cache_left_rec]
+        rule hash() -> Node
+            = _ begin:position!() left_brace() _ elements:(hash_element() ** (_ comma() _)) _ comma()* _ right_brace() end:position!() _ {
+                let mut out = vec![];
+                for (k ,v) in elements {
+                    out.push((k, v));
+                }
+                Node::Hash(out, Position::new(begin, end))
+            }
+            / list()
+
+        #[cache_left_rec]
+        rule list() -> Node
+            = _ begin:position!() left_bracket() elements:(expression() ** (_ comma()  _)) _ comma()*  right_bracket()  end:position!() _ {
+                Node::List(elements, Position::new(begin, end))
+            }
+            / function()
+
+        // Function Literal
+        #[cache_left_rec]
+        rule argument_signature() -> (String, Option<Node>)
+            = _ key:identifier() _ equal() _ value:(expression()) {
+                if let Node::Identifier(key_string, _) = key {
+                    (key_string, Some(value))
+                }
+                else {
+                    panic!("parse error")
+                }
+            }
+            / _ key:identifier() !equal() {
+                if let Node::Identifier(key_string, _) = key {
+                    (key_string, None)
+                }
+                else {
+                    panic!("parse error")
+                }
+            }
+
+        #[cache_left_rec]
+        rule arguments_signature() -> (Vec<String>, HashMap<String, Node>)
+            = args:(argument_signature() ** (_ comma() _)) {
+                let mut args_vec = vec![];
+                let mut kwargs_hash = HashMap::new();
+                for arg in args {
+                    let (k, v) = arg;
+                    if v.is_some() {
+                        kwargs_hash.insert(k, v.unwrap());
+                    }
+                    else {
+                        args_vec.push(k);
+                    }
+                }
+                (args_vec, kwargs_hash)
+            }
+
+        #[cache_left_rec]
+        rule function() -> Node
+            = _ begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() seq:sequence() _ end:position!() _ {
+                match seq {
+                    Node::Sequence(s, _) => {
+                        let seq = s;
+                        let (args, kwargs) = args;
+                        Node::Function {
+                            arguments: args,
+                            keyword_arguments: kwargs,
+                            sequence: seq,
+                            position: Position::new(begin, end)
+                        }
+                    }
+                    _ => {
+                        let (args, kwargs) = args;
+                        Node::Function {
+                            arguments: args,
+                            keyword_arguments: kwargs,
+                            sequence: vec![seq],
+                            position: Position::new(begin, end)
+                        }
+
+                    }
+                }
+            }
             / atom()
 
         #[cache_left_rec]
@@ -400,6 +518,8 @@ peg::parser! {
             = float_literal()
             / integer_literal()
             / string_literal()
+            / nil_literal()
+            / bool_literal()
             / identifier()
             / _ begin:position!() left_paren() _ expression:expression() _ right_paren() end:position!() _ {
                 expression

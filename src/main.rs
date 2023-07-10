@@ -1,6 +1,6 @@
 mod core;
 
-use crate::core::parser::tinyterp::expression as parse;
+use crate::core::parser::tinyterp::program as parse;
 
 use std::env;
 
