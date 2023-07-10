@@ -77,7 +77,7 @@ pub enum Node {
     Loop(Vec<Node>, Position),
 }
 
-const reserved_words: [&str; 11] = [
+const RESERVED_WORDS: [&str; 11] = [
     "if", "then", "else", "not", "and", "or", "return", "nil", "true", "false", "drop",
 ];
 
@@ -177,7 +177,7 @@ peg::parser! {
         rule identifier() -> Node
             = _ begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() _ {?
                 let name = format!("{}{}", name_initial, name);
-                if reserved_words.iter().find(|w| ***w == name).is_some() {
+                if RESERVED_WORDS.iter().find(|w| ***w == name).is_some() {
                     Err("that name is reserved.")
                 }
                 else {
