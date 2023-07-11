@@ -12,7 +12,7 @@ fn nil() {
 }
 
 #[test]
-fn block_return_1() {
+fn block_return() {
     assert_eq!(run("{1; return 2; 3}"), "2");
     assert_eq!(run("{1; return {2; return 3; 4}; 5}"), "3");
 }
