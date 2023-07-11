@@ -1,7 +1,7 @@
 use tinyterp::Runtime;
 
 pub fn run(code: &str) -> String {
-    Runtime::new().evaluate(code.to_string()).unwrap()
+    Runtime::new().evaluate(code).unwrap().to_string()
 }
 
 #[test]
@@ -12,7 +12,7 @@ fn nil() {
 }
 
 #[test]
-fn block_return() {
+fn block_return_1() {
     assert_eq!(run("{1; return 2; 3}"), "2");
     assert_eq!(run("{1; return {2; return 3; 4}; 5}"), "3");
 }
