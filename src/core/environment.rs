@@ -75,7 +75,7 @@ impl Environment {
             for node in seq {
                 match node {
                     Node::Return(n, _p) => {
-                        return Ok(self.evaluate_expression(n)?.remove_return());
+                        return self.evaluate_expression(n);
                     }
                     _ => {
                         last_obj = self.evaluate_expression(node)?;
@@ -228,7 +228,7 @@ impl Environment {
                     env.set(key.to_string(), r);
                 }
                 // call function
-                env.evaluate_expression(&body)
+                Ok(env.evaluate_expression(&body)?.remove_return())
             }
             _ => {
                 let c_obj = self.evaluate_expression(callable)?;
