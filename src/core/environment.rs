@@ -92,6 +92,8 @@ impl Environment {
         match node {
             Node::Sequence(seq, pos) => self.evaluate_sequence(seq, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
+            Node::FloatLiteral(f, pos) => self.evaluate_float_literal(*f, *pos),
+            Node::StringLiteral(s, pos) => self.evaluate_str_literal(s.clone(), *pos),
             Node::Assign(names, nodes, pos) => self.evaluate_assign(names, nodes, *pos),
             Node::Identifier(name, pos) => self.evaluate_identifier(name, *pos),
             Node::Function {
@@ -175,7 +177,7 @@ impl Environment {
                         pos_call,
                     ));
                 }
-                // detect invalid keyword_arguments
+                //TODO: detect invalid keyword_arguments ex: f = () -> {}; f(a=1)
 
                 // set arguments
                 for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
@@ -242,22 +244,35 @@ impl Environment {
         Ok(Object::Int(i))
     }
 
+    fn evaluate_float_literal(&mut self, f: f64, _pos: Position) -> Result<Object, Error> {
+        Ok(Object::Float(f))
+    }
+
+    fn evaluate_str_literal(&mut self, s: String, _pos: Position) -> Result<Object, Error> {
+        Ok(Object::Str(s))
+    }
+
     fn evaluate_assign(
         &mut self,
-        names: &[String],
-        nodes: &[Node],
-        _pos: Position,
+        lefts: &[Node],
+        rights: &[Node],
+        pos: Position,
     ) -> Result<Object, Error> {
-        if names.len() == 1 {
-            let r = self.evaluate_expression(&nodes[0])?;
-            self.set(names[0].clone(), r.clone());
+        if lefts.len() == 1 {
+            let r = self.evaluate_expression(&rights[0])?;
+            match &lefts[0] {
+                Node::Identifier(name, n_pos) => {
+                    self.set(name.clone(), r.clone());
+                }
+                _ => {
+                    todo!()
+                }
+            }
             Ok(r)
         } else {
             let mut output = vec![];
-            for (name, node) in names.iter().zip(nodes.iter()) {
-                let r = self.evaluate_expression(&node)?;
-                self.set(name.clone(), r.clone());
-                output.push(r);
+            for (l, r) in lefts.iter().zip(rights.iter()) {
+                output.push(self.evaluate_assign(&[l.clone()], &[r.clone()], pos)?)
             }
             Ok(Object::List(output))
         }

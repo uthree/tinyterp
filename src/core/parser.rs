@@ -69,9 +69,8 @@ pub enum Node {
     },
 
     GetAttribute(Box<Node>, Box<Node>, Position),
-    SetAttribute(Box<Node>, Box<Node>, Box<Node>, Position),
 
-    Assign(Vec<String>, Vec<Node>, Position),
+    Assign(Vec<Node>, Vec<Node>, Position),
     IfElse(Box<Node>, Box<Node>, Box<Node>, Position),
     Return(Box<Node>, Position),
     Drop(Vec<String>, Position),
@@ -265,22 +264,14 @@ peg::parser! {
 
         // variable name for assign
         #[cache_left_rec]
-        rule variable_name() -> String
-            = v:identifier() {
-                match v {
-                    Node::Identifier(s, _) => {
-                        s
-                    }
-                    _ => {
-                        panic!("parse error");
-                    }
-                }
-            }
+        rule assign_left_elem() -> Node
+            = get_attr()
+            / identifier()
 
        // Assign
         #[cache_left_rec]
-        rule assign_left() -> Vec<String>
-            = variable_name() ++ (_ comma() _)
+        rule assign_left() -> Vec<Node>
+            = assign_left_elem() ++ (_ comma() _)
 
         #[cache_left_rec]
         rule assign_right() -> Vec<Node>
