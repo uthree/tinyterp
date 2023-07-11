@@ -15,16 +15,16 @@ fn main() {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer).unwrap();
             let node = parse(&buffer);
-            //println!("{:?}", node);
+            println!("Parse Result: {:?}\n\n", node);
             if node.is_ok() {
                 let output = env.evaluate_program(&node.unwrap());
-                //println!("{:?}", output);
+                println!("Output: {:?} \n\n", output);
                 if output.is_ok() {
                     println!("-> {}", output.unwrap());
                 }
                 //println!("{:?}", env);
             } else {
-                //println!("Syntax Error {:?}", &node.err().unwrap())
+                println!("Syntax Error {:?}", &node.err().unwrap())
             }
         }
     } else {

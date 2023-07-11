@@ -69,6 +69,7 @@ pub enum Node {
     },
 
     GetAttribute(Box<Node>, Box<Node>, Position),
+    SetAttribute(Box<Node>, Box<Node>, Box<Node>, Position),
 
     Assign(Vec<String>, Vec<Node>, Position),
     IfElse(Box<Node>, Box<Node>, Box<Node>, Position),
@@ -242,7 +243,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
-            = _ begin:position!() keyword_return() _ expr:sequence() end:position!() _ {
+            = _ begin:position!() keyword_return() _ expr:expression() end:position!() _ {
                 Node::Return(Box::new(expr), Position::new(begin, end))
             }
             / _ begin:position!() keyword_return() end:position!() _ {
@@ -276,7 +277,7 @@ peg::parser! {
                 }
             }
 
-        // Assign
+       // Assign
         #[cache_left_rec]
         rule assign_left() -> Vec<String>
             = variable_name() ++ (_ comma() _)
@@ -284,6 +285,7 @@ peg::parser! {
         #[cache_left_rec]
         rule assign_right() -> Vec<Node>
             = expression() ++ (_ comma() _)
+
 
         #[cache_left_rec]
         rule assign() -> Node
@@ -429,7 +431,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule get_attr() -> Node
-            = begin:position!() reciever:get_attr() period() attribute_name:identifier() end:position!() {
+            = _ begin:position!() reciever:get_attr() _ period() _ attribute_name:identifier() end:position!() _ {
                 let mut attr_name: String;
                 if let Node::Identifier(name, _) = attribute_name {
                     attr_name = name;
@@ -439,10 +441,10 @@ peg::parser! {
                 }
                 Node::GetAttribute(Box::new(reciever), Box::new(Node::StringLiteral(attr_name, Position::new(begin, end))), Position::new(begin, end))
             }
-            / begin:position!() reciever:get_attr() _ left_bracket() _ expr:expression()  _ right_bracket() _ end:position!() {
+            / _ begin:position!() reciever:get_attr() _ left_bracket() _ expr:expression()  _ right_bracket() _ end:position!() _ {
                 Node::GetAttribute(Box::new(reciever), Box::new(expr), Position::new(begin, end))
             }
-            / begin:position!() reciever:get_attr() _ left_bracket() _ elements:(expression() ** (_ comma() _))  _ right_bracket() _ end:position!() {
+            / _ begin:position!() reciever:get_attr() _ left_bracket() _ elements:(expression() ** (_ comma() _))  _ right_bracket() _ end:position!() _ {
                 Node::GetAttribute(Box::new(reciever), Box::new(Node::List(elements, Position::new(begin, end))), Position::new(begin, end))
             }
             / hash()
