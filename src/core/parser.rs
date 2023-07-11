@@ -33,7 +33,7 @@ pub enum Node {
     Div(Box<Node>, Box<Node>, Position),
     Pow(Box<Node>, Box<Node>, Position),
 
-    // Compare Operators
+    // Compare Operator
     CmpLessThan(Box<Node>, Box<Node>, Position),
     CmpGreaterThan(Box<Node>, Box<Node>, Position),
     CmpLessThanEq(Box<Node>, Box<Node>, Position),
@@ -56,7 +56,7 @@ pub enum Node {
     Function {
         arguments: Vec<String>,
         keyword_arguments: HashMap<String, Node>,
-        sequence: Vec<Node>,
+        sequence: Box<Node>,
         position: Position,
     },
 
@@ -224,7 +224,21 @@ peg::parser! {
 
         #[cache_left_rec]
         rule expression() -> Node
-            = return_or_drop()
+            = sequence()
+
+        // Statements
+        #[cache_left_rec]
+        rule sequence() -> Node
+            = begin:position!() _ left_brace() _ right_brace() end:position!() {
+                Node::Hash(vec![], Position::new(begin, end))
+            }
+            / _ begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+                Node::Sequence(seq, Position::new(begin, end))
+            }
+            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+                Node::Loop(seq, Position::new(begin, end))
+            }
+            / return_or_drop()
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
@@ -245,20 +259,6 @@ peg::parser! {
                     }
                 }
                 Node::Drop(variable_names, Position::new(begin, end))
-            }
-            / sequence()
-
-        // Statements
-        #[cache_left_rec]
-        rule sequence() -> Node
-            = begin:position!() _ left_brace() _ right_brace() end:position!() {
-                Node::Hash(vec![], Position::new(begin, end))
-            }
-            / _ begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
-                Node::Sequence(seq, Position::new(begin, end))
-            }
-            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
-                Node::Loop(seq, Position::new(begin, end))
             }
             / assign()
 
@@ -511,27 +511,12 @@ peg::parser! {
         #[cache_left_rec]
         rule function() -> Node
             = _ begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() seq:sequence() _ end:position!() _ {
-                match seq {
-                    Node::Sequence(s, _) => {
-                        let seq = s;
-                        let (args, kwargs) = args;
-                        Node::Function {
-                            arguments: args,
-                            keyword_arguments: kwargs,
-                            sequence: seq,
-                            position: Position::new(begin, end)
-                        }
-                    }
-                    _ => {
-                        let (args, kwargs) = args;
-                        Node::Function {
-                            arguments: args,
-                            keyword_arguments: kwargs,
-                            sequence: vec![seq],
-                            position: Position::new(begin, end)
-                        }
-
-                    }
+                let (args, kwargs) = args;
+                Node::Function {
+                    arguments: args,
+                    keyword_arguments: kwargs,
+                    sequence: Box::new(seq),
+                    position: Position::new(begin, end)
                 }
             }
             / atom()

@@ -1,8 +1,9 @@
+use crate::builtin_functions::load_builtin_functions;
 use crate::core::error::Error;
 use crate::core::object::Object;
 use crate::core::parser::Node;
 use crate::core::parser::Position;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, Clone)]
 pub struct Environment {
@@ -12,10 +13,12 @@ pub struct Environment {
 
 impl Environment {
     pub fn new() -> Self {
-        Environment {
+        let mut env = Environment {
             store: BTreeMap::new(),
             outer: None,
-        }
+        };
+        load_builtin_functions(&mut env);
+        env
     }
 
     // initialize new scope
@@ -56,6 +59,16 @@ impl Environment {
         self.store.remove(&name);
     }
 
+    // add built-in(Rust) function
+    pub fn add_function(
+        &mut self,
+        name: &str,
+        function: fn(Vec<Object>, BTreeMap<String, Object>, Position) -> Result<Object, Error>,
+    ) {
+        self.store
+            .insert(name.to_string(), Object::BuiltInFunction(function));
+    }
+
     pub fn evaluate_program(&mut self, node: &Node) -> Result<Object, Error> {
         if let Node::Sequence(seq, _pos) = node {
             let mut last_obj = Object::Nil;
@@ -81,9 +94,86 @@ impl Environment {
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::Assign(names, nodes, pos) => self.evaluate_assign(names, nodes, *pos),
             Node::Identifier(name, pos) => self.evaluate_identifier(name, *pos),
+            Node::Function {
+                arguments,
+                keyword_arguments,
+                sequence,
+                position,
+            } => self.evaluate_function(
+                &*arguments.clone(),
+                keyword_arguments.clone(),
+                *sequence.clone(),
+                *position,
+            ),
+            Node::CallFunction {
+                callable,
+                arguments,
+                keyword_arguments,
+                position,
+            } => self.evaluate_call_function(
+                callable,
+                arguments,
+                keyword_arguments.clone(),
+                *position,
+            ),
             Node::Drop(names, pos) => self.evaluate_drop(names, *pos),
+            Node::List(nodes, pos) => self.evaluate_list(nodes, *pos),
             _ => Ok(Object::Nil),
         }
+    }
+
+    fn evaluate_list(&mut self, nodes: &[Node], pos: Position) -> Result<Object, Error> {
+        let mut elements = vec![];
+        for node in nodes {
+            elements.push(self.evaluate_expression(node)?)
+        }
+        Ok(Object::List(elements))
+    }
+
+    fn evaluate_call_function(
+        &mut self,
+        callable: &Node,
+        args: &[Node],
+        kwargs: HashMap<String, Node>,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        let callable_obj = self.evaluate_expression(callable)?;
+        match callable_obj {
+            Object::BuiltInFunction(func) => {
+                let mut args_vec = vec![];
+                let mut kwargs_hash = BTreeMap::new();
+                for arg in args {
+                    args_vec.push(self.evaluate_expression(arg)?);
+                }
+                for (key, value) in kwargs.iter() {
+                    kwargs_hash.insert(key.clone(), self.evaluate_expression(value)?);
+                }
+                func(args_vec, kwargs_hash, pos)
+            }
+            _ => {
+                let c_obj = self.evaluate_expression(callable)?;
+                Err(Error::TypeError(
+                    format!("{} is not callable.", c_obj.type_name()),
+                    pos,
+                ))
+            }
+        }
+    }
+
+    fn evaluate_function(
+        &mut self,
+        args: &[String],
+        kwargs: HashMap<String, Node>,
+        sequence: Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        Ok(Object::Function {
+            args: args.to_vec(),
+            kwargs: kwargs,
+            body: sequence,
+            pos: pos,
+            env: self.clone_store(),
+        })
     }
 
     fn evaluate_sequence(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {
@@ -117,13 +207,19 @@ impl Environment {
             self.set(names[0].clone(), r.clone());
             Ok(r)
         } else {
-            todo!();
+            let mut output = vec![];
+            for (name, node) in names.iter().zip(nodes.iter()) {
+                let r = self.evaluate_expression(&node)?;
+                self.set(name.clone(), r.clone());
+                output.push(r);
+            }
+            Ok(Object::List(output))
         }
     }
 
     fn evaluate_identifier(&mut self, name: &String, pos: Position) -> Result<Object, Error> {
         self.get(name)
-            .ok_or(Error::VariableNotInitialized(name.clone()))
+            .ok_or(Error::VariableNotInitialized(name.clone(), pos))
     }
 
     fn evaluate_drop(&mut self, names: &[String], pos: Position) -> Result<Object, Error> {
@@ -131,7 +227,7 @@ impl Environment {
             if self.store.contains_key(name) {
                 self.drop(name.clone());
             } else {
-                return Err(Error::VariableNotInitialized(name.clone()));
+                return Err(Error::VariableNotInitialized(name.clone(), pos));
             }
         }
         Ok(Object::Nil)

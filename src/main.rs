@@ -1,3 +1,4 @@
+mod builtin_functions;
 mod core;
 
 use crate::core::environment::Environment;
@@ -14,9 +15,17 @@ fn main() {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer).unwrap();
             let node = parse(&buffer);
-            println!("{:?}", node);
-            println!("{:?}", env.evaluate_program(&node.unwrap()));
-            println!("{:?}", env);
+            //println!("{:?}", node);
+            if node.is_ok() {
+                let output = env.evaluate_program(&node.unwrap());
+                //println!("{:?}", output);
+                if output.is_ok() {
+                    println!("-> {}", output.unwrap());
+                }
+                //println!("{:?}", env);
+            } else {
+                //println!("Syntax Error {:?}", &node.err().unwrap())
+            }
         }
     } else {
         // run file
