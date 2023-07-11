@@ -121,13 +121,42 @@ impl Environment {
             Node::Drop(names, pos) => self.evaluate_drop(names, *pos),
             Node::List(nodes, pos) => self.evaluate_list(nodes, *pos),
             Node::Add(left, right, pos) => self.evaluate_add(left, right, *pos),
+            Node::Sub(left, right, pos) => self.evaluate_sub(left, right, *pos),
+            Node::Div(left, right, pos) => self.evaluate_div(left, right, *pos),
+            Node::Mul(left, right, pos) => self.evaluate_mul(left, right, *pos),
+            Node::Pow(left, right, pos) => self.evaluate_pow(left, right, *pos),
+            Node::Neg(value, pos) => self.evaluate_neg(value, *pos),
             _ => Ok(Object::Nil),
         }
+    }
+
+    fn evaluate_neg(&mut self, value: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(value)?.neg(pos)
     }
 
     fn evaluate_add(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
         self.evaluate_expression(left)?
             .add(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_sub(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .sub(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_mul(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .mul(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_div(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .div(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_pow(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .pow(self.evaluate_expression(right)?, pos)
     }
 
     fn evaluate_list(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {

@@ -1,8 +1,7 @@
 mod builtin_functions;
-pub mod core;
+mod core;
 
-use crate::core::environment::Environment;
-use crate::core::parser::tinyterp::program as parse;
+use tinyterp::Runtime;
 
 use std::env;
 
@@ -10,21 +9,18 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         // start REPL
-        let mut env = Environment::new();
+        let mut rt = Runtime::new();
         loop {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer).unwrap();
-            let node = parse(&buffer);
-            println!("Parse Result: {:?}\n\n", node);
-            if node.is_ok() {
-                let output = env.evaluate_program(&node.unwrap());
-                println!("Output: {:?} \n\n", output);
-                if output.is_ok() {
-                    println!("-> {}", output.unwrap());
-                }
-                //println!("{:?}", env);
+            if buffer == "\n" {
+                continue;
+            }
+            let result = rt.evaluate(&buffer);
+            if let Ok(output) = result {
+                println!("-> {}", output);
             } else {
-                println!("Syntax Error {:?}", &node.err().unwrap())
+                println!("Error: {}", result.err().unwrap());
             }
         }
     } else {

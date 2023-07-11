@@ -31,6 +31,6 @@ pub fn to_str(
             pos,
         ))
     } else {
-        todo!()
+        Ok(Object::Str(args[0].to_string()))
     }
 }
