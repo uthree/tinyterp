@@ -20,18 +20,18 @@ impl Environment {
 
     // initialize new scope
     pub fn new_outer(self) -> Self {
-        return Environment {
+        Environment {
             store: BTreeMap::new(),
             outer: Some(Box::new(self)),
-        };
+        }
     }
 
-    // copy store
-    pub fn copy_store(&self) -> Self {
-        return Environment {
+    // clone store
+    pub fn clone_store(&self) -> Self {
+        Environment {
             store: self.store.clone(),
             outer: None,
-        };
+        }
     }
 
     // get object
@@ -45,27 +45,27 @@ impl Environment {
         }
     }
 
-    // set objecct
+    // set object
     pub fn set(&mut self, name: String, value: Object) -> Object {
         self.store.insert(name, value.clone());
-        return value;
+        value
     }
 
-    pub fn evaluate(&mut self, node: &Node) -> Result<Object, Error> {
-        if let Node::Sequence(seq, pos) = node {
+    // drop object
+    pub fn drop(&mut self, name: String) {
+        self.store.remove(&name);
+    }
+
+    pub fn evaluate_program(&mut self, node: &Node) -> Result<Object, Error> {
+        if let Node::Sequence(seq, _pos) = node {
             let mut last_obj = Object::Nil;
             for node in seq {
                 match node {
-                    Node::Return(n, p) => {
+                    Node::Return(n, _p) => {
                         return self.evaluate_expression(n);
                     }
                     _ => {
-                        let r = self.evaluate_expression(&node);
-                        if r.is_ok() {
-                            last_obj = r.unwrap();
-                        } else {
-                            return Err(r.err().unwrap());
-                        }
+                        last_obj = self.evaluate_expression(node)?;
                     }
                 }
             }
@@ -80,52 +80,48 @@ impl Environment {
             Node::Sequence(seq, pos) => self.evaluate_sequence(seq, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::Assign(names, nodes, pos) => self.evaluate_assign(names, nodes, *pos),
+            Node::Identifier(name, pos) => self.evaluate_identifier(name, *pos),
             _ => Ok(Object::Nil),
         }
     }
 
-    fn evaluate_sequence(&mut self, nodes: &Vec<Node>, pos: Position) -> Result<Object, Error> {
+    fn evaluate_sequence(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {
         let mut last_obj = Object::Nil;
-        let mut env = self.copy_store().new_outer();
+        let mut env = self.clone_store().new_outer();
         for node in nodes {
             match node {
-                Node::Return(n, p) => {
+                Node::Return(n, _p) => {
                     return env.evaluate_expression(n);
                 }
                 _ => {
-                    let r = env.evaluate_expression(&node);
-                    if r.is_ok() {
-                        last_obj = r.unwrap();
-                    } else {
-                        return Err(r.err().unwrap());
-                    }
+                    last_obj = env.evaluate_expression(node)?;
                 }
             }
         }
         Ok(last_obj)
     }
 
-    fn evaluate_integer_literal(&mut self, i: i64, pos: Position) -> Result<Object, Error> {
+    fn evaluate_integer_literal(&mut self, i: i64, _pos: Position) -> Result<Object, Error> {
         Ok(Object::Int(i))
     }
 
     fn evaluate_assign(
         &mut self,
-        names: &Vec<String>,
-        nodes: &Vec<Node>,
-        pos: Position,
+        names: &[String],
+        nodes: &[Node],
+        _pos: Position,
     ) -> Result<Object, Error> {
         if names.len() == 1 {
-            let r = self.evaluate_expression(&nodes[0]);
-            if r.is_ok() {
-                let r = r.unwrap();
-                self.set(names[0].clone(), r.clone());
-                Ok(r.clone())
-            } else {
-                Err(r.err().unwrap())
-            }
+            let r = self.evaluate_expression(&nodes[0])?;
+            self.set(names[0].clone(), r.clone());
+            Ok(r)
         } else {
-            unreachable!();
+            todo!();
         }
+    }
+
+    fn evaluate_identifier(&mut self, name: &String, pos: Position) -> Result<Object, Error> {
+        self.get(name)
+            .ok_or(Error::VariableNotInitialized(name.clone()))
     }
 }

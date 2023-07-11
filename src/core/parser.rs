@@ -177,7 +177,7 @@ peg::parser! {
         rule identifier() -> Node
             = _ begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() _ {?
                 let name = format!("{}{}", name_initial, name);
-                if RESERVED_WORDS.iter().find(|w| ***w == name).is_some() {
+                if RESERVED_WORDS.iter().any(|w| **w == name) {
                     Err("that name is reserved.")
                 }
                 else {

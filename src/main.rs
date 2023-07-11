@@ -15,7 +15,7 @@ fn main() {
             std::io::stdin().read_line(&mut buffer).unwrap();
             let node = parse(&buffer);
             println!("{:?}", node);
-            println!("{:?}", env.evaluate(&node.unwrap()));
+            println!("{:?}", env.evaluate_program(&node.unwrap()));
             println!("{:?}", env);
         }
     } else {
