@@ -118,8 +118,14 @@ impl Environment {
             ),
             Node::Drop(names, pos) => self.evaluate_drop(names, *pos),
             Node::List(nodes, pos) => self.evaluate_list(nodes, *pos),
+            Node::Add(left, right, pos) => self.evaluate_add(left, right, *pos),
             _ => Ok(Object::Nil),
         }
+    }
+
+    fn evaluate_add(&mut self, left: &Node, right: &Node, pos: Position) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .add(self.evaluate_expression(right)?, pos)
     }
 
     fn evaluate_list(&mut self, nodes: &[Node], pos: Position) -> Result<Object, Error> {
@@ -133,28 +139,67 @@ impl Environment {
     fn evaluate_call_function(
         &mut self,
         callable: &Node,
-        args: &[Node],
-        kwargs: HashMap<String, Node>,
-        pos: Position,
+        arg_nodes: &[Node],
+        kwarg_nodes: HashMap<String, Node>,
+        pos_call: Position,
     ) -> Result<Object, Error> {
         let callable_obj = self.evaluate_expression(callable)?;
         match callable_obj {
             Object::BuiltInFunction(func) => {
                 let mut args_vec = vec![];
                 let mut kwargs_hash = BTreeMap::new();
-                for arg in args {
+                for arg in arg_nodes {
                     args_vec.push(self.evaluate_expression(arg)?);
                 }
-                for (key, value) in kwargs.iter() {
+                for (key, value) in kwarg_nodes.iter() {
                     kwargs_hash.insert(key.clone(), self.evaluate_expression(value)?);
                 }
-                func(args_vec, kwargs_hash, pos)
+                func(args_vec, kwargs_hash, pos_call)
+            }
+            Object::Function {
+                args,
+                kwargs,
+                body,
+                mut env,
+                pos,
+            } => {
+                // check number of arguments
+                if arg_nodes.len() != args.len() {
+                    return Err(Error::ArgumentError(
+                        format!(
+                            "the function takes {} positional arguments, but {} positional arguments were given.",
+                            args.len(),
+                            arg_nodes.len()
+                        )
+                        .to_string(),
+                        pos_call,
+                    ));
+                }
+
+                // set arguments
+                for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
+                    env.set(key.to_string(), self.evaluate_expression(value_node)?);
+                }
+                for key in kwargs.keys() {
+                    let mut value_node = None;
+                    println!("search {}", key);
+                    if let Some(value) = kwarg_nodes.get(key) {
+                        value_node = Some(value)
+                    } else {
+                        value_node = Some(kwargs.get(key).unwrap())
+                    }
+                    let r = self.evaluate_expression(value_node.unwrap())?;
+                    println!("SET {} to {}", key, r);
+                    env.set(key.to_string(), r);
+                }
+                // call function
+                env.evaluate_expression(&body)
             }
             _ => {
                 let c_obj = self.evaluate_expression(callable)?;
                 Err(Error::TypeError(
                     format!("{} is not callable.", c_obj.type_name()),
-                    pos,
+                    pos_call,
                 ))
             }
         }

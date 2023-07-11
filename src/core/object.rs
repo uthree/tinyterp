@@ -14,7 +14,7 @@ pub enum Object {
     Float(f64),
     Str(String),
     List(Vec<Object>),
-    Hash(BTreeMap<Object, Object>),
+    Hash(HashMap<Object, Object>),
     Function {
         args: Vec<String>,
         kwargs: HashMap<String, Node>,
@@ -93,6 +93,35 @@ impl Object {
                 Object::Float(r) => Ok(Object::Float(l as f64 + r)),
                 _ => Err(Error::TypeError(
                     format!("cannot add int and {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Float(l) => match other {
+                Object::Int(r) => Ok(Object::Float(l + r as f64)),
+                Object::Float(r) => Ok(Object::Float(l + r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot add float and {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Str(l) => match other {
+                // concatenate str
+                Object::Str(r) => Ok(Object::Str(format!("{}{}", l, r))),
+                _ => Err(Error::TypeError(
+                    format!("cannot add str and {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::List(l) => match other {
+                // concatenate str
+                Object::List(r) => {
+                    let mut out = vec![];
+                    out.append(&mut l.to_vec());
+                    out.append(&mut r.to_vec());
+                    Ok(Object::List(out))
+                }
+                _ => Err(Error::TypeError(
+                    format!("cannot add list and {}", other.type_name()),
                     pos,
                 )),
             },

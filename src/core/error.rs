@@ -6,8 +6,6 @@ use crate::core::parser::Position;
 pub enum Error {
     VariableNotInitialized(String, Position),
     TypeError(String, Position),
-    InvaildNumberOfArguments,
     FailedToConvertType,
     ArgumentError(String, Position),
-    KeywordNotFound(String, Position),
 }
