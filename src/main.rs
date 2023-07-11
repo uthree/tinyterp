@@ -18,7 +18,7 @@ fn main() {
             //println!("{:?}", node);
             if node.is_ok() {
                 let output = env.evaluate_program(&node.unwrap());
-                println!("{:?}", output);
+                //println!("{:?}", output);
                 if output.is_ok() {
                     println!("-> {}", output.unwrap());
                 }

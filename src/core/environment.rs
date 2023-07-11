@@ -175,6 +175,7 @@ impl Environment {
                         pos_call,
                     ));
                 }
+                // detect invalid keyword_arguments
 
                 // set arguments
                 for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
