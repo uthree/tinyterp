@@ -20,7 +20,7 @@ impl Runtime {
         if let Ok(node) = node {
             let output = self.env.evaluate_program(&node);
             if let Ok(output) = output {
-                Ok(output)
+                Ok(output.remove_return())
             } else {
                 Err(generate_error_message(output.err().unwrap(), code))
             }

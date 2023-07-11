@@ -242,7 +242,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
-            = _ begin:position!() keyword_return() _ expr:expression() end:position!() _ {
+            = _ begin:position!() keyword_return() _ expr:return_or_drop() end:position!() _ {
                 Node::Return(Box::new(expr), Position::new(begin, end))
             }
             / _ begin:position!() keyword_return() end:position!() _ {

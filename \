@@ -126,7 +126,6 @@ impl Environment {
             Node::Mul(left, right, pos) => self.evaluate_mul(left, right, *pos),
             Node::Pow(left, right, pos) => self.evaluate_pow(left, right, *pos),
             Node::Neg(value, pos) => self.evaluate_neg(value, *pos),
-            Node::Return(value, pos) => self.evaluate_return(value, *pos),
             _ => Ok(Object::Nil),
         }
     }
@@ -169,8 +168,9 @@ impl Environment {
     }
 
     fn evaluate_return(&mut self, value: &Node, pos: Position) -> Result<Object, Error> {
-        Ok(Object::Return(Box::new(self.evaluate_expression(value)?)))
+        Object::Return(self.evaluate_expression(value)?)
     }
+
 
     fn evaluate_call_function(
         &mut self,

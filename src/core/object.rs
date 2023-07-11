@@ -62,6 +62,13 @@ impl std::fmt::Display for Object {
 }
 
 impl Object {
+    pub fn remove_return(self) -> Self {
+        match self {
+            Object::Return(obj) => obj.remove_return(),
+            _ => self,
+        }
+    }
+
     pub fn type_name(&self) -> &str {
         match self {
             Object::Bool(_) => "bool",
