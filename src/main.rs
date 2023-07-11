@@ -1,5 +1,5 @@
 mod builtin_functions;
-mod core;
+pub mod core;
 
 use crate::core::environment::Environment;
 use crate::core::parser::tinyterp::program as parse;
