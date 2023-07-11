@@ -75,7 +75,7 @@ impl Environment {
             for node in seq {
                 match node {
                     Node::Return(n, _p) => {
-                        return self.evaluate_expression(n);
+                        return Ok(self.evaluate_expression(n)?.remove_return());
                     }
                     _ => {
                         last_obj = self.evaluate_expression(node)?;
