@@ -185,14 +185,12 @@ impl Environment {
                 }
                 for key in kwargs.keys() {
                     let mut value_node = None;
-                    println!("search {}", key);
                     if let Some(value) = kwarg_nodes.get(key) {
                         value_node = Some(value)
                     } else {
                         value_node = Some(kwargs.get(key).unwrap())
                     }
                     let r = self.evaluate_expression(value_node.unwrap())?;
-                    println!("SET {} to {}", key, r);
                     env.set(key.to_string(), r);
                 }
                 // call function
