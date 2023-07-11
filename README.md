@@ -7,8 +7,7 @@ wip
 
 ## 使い方
 ```rust
-use tinyterp::Environment;
-// Work in progress ...
-
+use tinyterp::Runtime;
 ```
 
+wip
