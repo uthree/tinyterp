@@ -81,6 +81,7 @@ impl Environment {
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::Assign(names, nodes, pos) => self.evaluate_assign(names, nodes, *pos),
             Node::Identifier(name, pos) => self.evaluate_identifier(name, *pos),
+            Node::Drop(names, pos) => self.evaluate_drop(names, *pos),
             _ => Ok(Object::Nil),
         }
     }
@@ -123,5 +124,16 @@ impl Environment {
     fn evaluate_identifier(&mut self, name: &String, pos: Position) -> Result<Object, Error> {
         self.get(name)
             .ok_or(Error::VariableNotInitialized(name.clone()))
+    }
+
+    fn evaluate_drop(&mut self, names: &[String], pos: Position) -> Result<Object, Error> {
+        for name in names {
+            if self.store.contains_key(name) {
+                self.drop(name.clone());
+            } else {
+                return Err(Error::VariableNotInitialized(name.clone()));
+            }
+        }
+        Ok(Object::Nil)
     }
 }
