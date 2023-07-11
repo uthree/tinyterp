@@ -102,7 +102,7 @@ impl Environment {
                 sequence,
                 position,
             } => self.evaluate_function(
-                &*arguments.clone(),
+                &arguments.clone(),
                 keyword_arguments.clone(),
                 *sequence.clone(),
                 *position,
@@ -130,7 +130,7 @@ impl Environment {
             .add(self.evaluate_expression(right)?, pos)
     }
 
-    fn evaluate_list(&mut self, nodes: &[Node], pos: Position) -> Result<Object, Error> {
+    fn evaluate_list(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {
         let mut elements = vec![];
         for node in nodes {
             elements.push(self.evaluate_expression(node)?)
@@ -163,7 +163,7 @@ impl Environment {
                 kwargs,
                 body,
                 mut env,
-                pos,
+                pos: _,
             } => {
                 // check number of arguments
                 if arg_nodes.len() != args.len() {
@@ -173,7 +173,7 @@ impl Environment {
                             args.len(),
                             arg_nodes.len()
                         )
-                        .to_string(),
+                        ,
                         pos_call,
                     ));
                 }
@@ -217,9 +217,9 @@ impl Environment {
     ) -> Result<Object, Error> {
         Ok(Object::Function {
             args: args.to_vec(),
-            kwargs: kwargs,
+            kwargs,
             body: sequence,
-            pos: pos,
+            pos,
             env: self.clone_store(),
         })
     }
@@ -261,7 +261,7 @@ impl Environment {
         if lefts.len() == 1 {
             let r = self.evaluate_expression(&rights[0])?;
             match &lefts[0] {
-                Node::Identifier(name, n_pos) => {
+                Node::Identifier(name, _n_pos) => {
                     self.set(name.clone(), r.clone());
                 }
                 _ => {

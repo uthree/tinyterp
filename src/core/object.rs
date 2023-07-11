@@ -2,9 +2,9 @@ use crate::core::environment::Environment;
 use crate::core::error::Error;
 use crate::core::parser::Node;
 use crate::core::parser::Position;
-use std::any::Any;
+
 use std::collections::{BTreeMap, HashMap};
-use std::fmt;
+
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -37,8 +37,8 @@ impl std::fmt::Display for Object {
                     write!(f, "false")?
                 }
             }
-            Object::Int(i) => write!(f, "{}", i.to_string())?,
-            Object::Float(v) => write!(f, "{}", v.to_string())?,
+            Object::Int(i) => write!(f, "{}", i)?,
+            Object::Float(v) => write!(f, "{}", v)?,
             Object::Str(s) => write!(f, "{:?}", s)?,
             Object::List(l) => write!(
                 f,
@@ -49,13 +49,13 @@ impl std::fmt::Display for Object {
                     .join(", ")
             )?,
             Object::Function {
-                args,
-                kwargs,
-                body,
-                env,
-                pos,
+                args: _,
+                kwargs: _,
+                body: _,
+                env: _,
+                pos: _,
             } => write!(f, "<function>")?,
-            Object::BuiltInFunction(func) => write!(f, "<built-in function>")?,
+            Object::BuiltInFunction(_func) => write!(f, "<built-in function>")?,
             _ => write!(f, "<unknown object>")?,
         };
         Ok(())
@@ -74,11 +74,11 @@ impl Object {
             Object::Hash(_) => "hash",
             Object::BuiltInFunction(_) => "function",
             Object::Function {
-                args,
-                kwargs,
-                body,
-                env,
-                pos,
+                args: _,
+                kwargs: _,
+                body: _,
+                env: _,
+                pos: _,
             } => "function",
             Object::Return(obj) => obj.type_name(),
         }

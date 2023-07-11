@@ -9,7 +9,7 @@ pub fn get_type(
     pos: Position,
 ) -> Result<Object, Error> {
     // this function takes only one argument.
-    if kwargs.len() > 0 || args.len() != 1 {
+    if !kwargs.is_empty() || args.len() != 1 {
         Err(Error::ArgumentError(
             "function `type` takes only one argument.".to_string(),
             pos,
@@ -25,7 +25,7 @@ pub fn to_str(
     kwargs: BTreeMap<String, Object>,
     pos: Position,
 ) -> Result<Object, Error> {
-    if kwargs.len() > 0 || args.len() != 1 {
+    if !kwargs.is_empty() || args.len() != 1 {
         Err(Error::ArgumentError(
             "function `str` takes only one argument.".to_string(),
             pos,
