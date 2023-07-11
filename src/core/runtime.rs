@@ -16,7 +16,7 @@ impl Runtime {
         }
     }
     pub fn evaluate(&mut self, code: &str) -> Result<Object, String> {
-        let node = parse(&code);
+        let node = parse(code);
         if let Ok(node) = node {
             let output = self.env.evaluate_program(&node);
             if let Ok(output) = output {

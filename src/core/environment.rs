@@ -168,7 +168,7 @@ impl Environment {
         Ok(Object::List(elements))
     }
 
-    fn evaluate_return(&mut self, value: &Node, pos: Position) -> Result<Object, Error> {
+    fn evaluate_return(&mut self, value: &Node, _pos: Position) -> Result<Object, Error> {
         Ok(Object::Return(Box::new(self.evaluate_expression(value)?)))
     }
 

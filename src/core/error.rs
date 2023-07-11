@@ -11,7 +11,7 @@ pub enum Error {
 
 pub fn generate_error_message(error: Error, code: &str) -> String {
     let mut output = "".to_string();
-    let code = code.to_string();
+    let _code = code.to_string();
 
     output = format!("{:?}", error);
     output
