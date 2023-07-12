@@ -5,7 +5,7 @@ use crate::core::parser::Node;
 use crate::core::parser::Position;
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     store: BTreeMap<String, Object>,
     outer: Option<Box<Environment>>,
@@ -75,7 +75,7 @@ impl Environment {
             for node in seq {
                 match node {
                     Node::Return(n, _p) => {
-                        return self.evaluate_expression(n);
+                        return Ok(self.evaluate_expression(n)?.remove_return());
                     }
                     _ => {
                         last_obj = self.evaluate_expression(node)?;
@@ -90,7 +90,7 @@ impl Environment {
 
     fn evaluate_expression(&mut self, node: &Node) -> Result<Object, Error> {
         match node {
-            Node::Sequence(seq, pos) => self.evaluate_sequence(seq, *pos),
+            Node::Sequence(seq, pos) => self.evaluate_sequence(seq, false, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::FloatLiteral(f, pos) => self.evaluate_float_literal(*f, *pos),
             Node::StringLiteral(s, pos) => self.evaluate_str_literal(s.clone(), *pos),
@@ -127,8 +127,35 @@ impl Environment {
             Node::Pow(left, right, pos) => self.evaluate_pow(left, right, *pos),
             Node::Neg(value, pos) => self.evaluate_neg(value, *pos),
             Node::Return(value, pos) => self.evaluate_return(value, *pos),
+            Node::IfElse(cond, a, b, pos) => self.evaluate_ifelse(cond, a, b, *pos),
+            Node::CmpEq(left, right, pos) => self.evaluate_cmp_eq(left, right, *pos),
+            Node::Nil(pos) => Ok(Object::Nil),
             _ => Ok(Object::Nil),
         }
+    }
+
+    fn evaluate_ifelse(
+        &mut self,
+        cond: &Node,
+        a: &Node,
+        b: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        if self.evaluate_expression(cond)?.to_bool() {
+            self.evaluate_expression(a)
+        } else {
+            self.evaluate_expression(b)
+        }
+    }
+
+    fn evaluate_cmp_eq(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        let b = self.evaluate_expression(left)? == self.evaluate_expression(right)?;
+        Ok(Object::Bool(b))
     }
 
     fn evaluate_neg(&mut self, value: &Node, pos: Position) -> Result<Object, Error> {
@@ -256,13 +283,22 @@ impl Environment {
         })
     }
 
-    fn evaluate_sequence(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {
+    fn evaluate_sequence(
+        &mut self,
+        nodes: &[Node],
+        bypass_return: bool,
+        _pos: Position,
+    ) -> Result<Object, Error> {
         let mut last_obj = Object::Nil;
         let mut env = self.clone_store().new_outer();
         for node in nodes {
             match node {
                 Node::Return(n, _p) => {
-                    return env.evaluate_expression(n);
+                    if bypass_return {
+                        return env.evaluate_expression(node);
+                    } else {
+                        return env.evaluate_expression(n);
+                    }
                 }
                 _ => {
                     last_obj = env.evaluate_expression(node)?;

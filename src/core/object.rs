@@ -5,7 +5,7 @@ use crate::core::parser::Position;
 
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Nil,
     Bool(bool),
@@ -13,7 +13,7 @@ pub enum Object {
     Float(f64),
     Str(String),
     List(Vec<Object>),
-    Hash(HashMap<Object, Object>),
+    Hash(HashMap<String, Object>),
     Function {
         args: Vec<String>,
         kwargs: HashMap<String, Node>,
@@ -87,6 +87,15 @@ impl Object {
                 pos: _,
             } => "function",
             Object::Return(obj) => obj.type_name(),
+        }
+    }
+
+    // for if-expression
+    pub fn to_bool(self) -> bool {
+        match self {
+            Object::Bool(b) => b,
+            Object::Nil => false,
+            _ => true,
         }
     }
 

@@ -2,7 +2,7 @@ use peg;
 
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub begin: usize,
     pub end: usize,
@@ -14,7 +14,7 @@ impl Position {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     // Literals
     IntegerLiteral(i64, Position),
