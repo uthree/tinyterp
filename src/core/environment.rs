@@ -92,6 +92,7 @@ impl Environment {
         match node {
             Node::Sequence(seq, pos) => self.evaluate_sequence(seq, false, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
+            Node::Bool(b, pos) => self.evaluate_bool_literal(*b, *pos),
             Node::FloatLiteral(f, pos) => self.evaluate_float_literal(*f, *pos),
             Node::StringLiteral(s, pos) => self.evaluate_str_literal(s.clone(), *pos),
             Node::Assign(names, nodes, pos) => self.evaluate_assign(names, nodes, *pos),
@@ -129,6 +130,8 @@ impl Environment {
             Node::Return(value, pos) => self.evaluate_return(value, *pos),
             Node::IfElse(cond, a, b, pos) => self.evaluate_ifelse(cond, a, b, *pos),
             Node::CmpEq(left, right, pos) => self.evaluate_cmp_eq(left, right, *pos),
+            Node::LogicalOr(left, right, pos) => self.evaluate_logical_or(left, right, *pos),
+            Node::LogicalAnd(left, right, pos) => self.evaluate_logical_and(left, right, *pos),
             Node::Nil(pos) => Ok(Object::Nil),
             _ => Ok(Object::Nil),
         }
@@ -146,6 +149,28 @@ impl Environment {
         } else {
             self.evaluate_expression(b)
         }
+    }
+
+    fn evaluate_logical_or(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        let b =
+            self.evaluate_expression(left)?.to_bool() || self.evaluate_expression(right)?.to_bool();
+        Ok(Object::Bool(b))
+    }
+
+    fn evaluate_logical_and(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        let b =
+            self.evaluate_expression(left)?.to_bool() && self.evaluate_expression(right)?.to_bool();
+        Ok(Object::Bool(b))
     }
 
     fn evaluate_cmp_eq(
@@ -242,7 +267,8 @@ impl Environment {
 
                 // set arguments
                 for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
-                    env.set(key.to_string(), self.evaluate_expression(value_node)?);
+                    let r = self.evaluate_expression(value_node)?;
+                    env.set(key.to_string(), r);
                 }
                 for key in kwargs.keys() {
                     let mut value_node = None;
@@ -306,6 +332,9 @@ impl Environment {
             }
         }
         Ok(last_obj)
+    }
+    fn evaluate_bool_literal(&mut self, b: bool, _pos: Position) -> Result<Object, Error> {
+        Ok(Object::Bool(b))
     }
 
     fn evaluate_integer_literal(&mut self, i: i64, _pos: Position) -> Result<Object, Error> {
