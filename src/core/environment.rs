@@ -132,7 +132,7 @@ impl Environment {
             Node::CmpEq(left, right, pos) => self.evaluate_cmp_eq(left, right, *pos),
             Node::LogicalOr(left, right, pos) => self.evaluate_logical_or(left, right, *pos),
             Node::LogicalAnd(left, right, pos) => self.evaluate_logical_and(left, right, *pos),
-            Node::Nil(pos) => Ok(Object::Nil),
+            Node::Nil(_pos) => Ok(Object::Nil),
             _ => Ok(Object::Nil),
         }
     }
@@ -142,7 +142,7 @@ impl Environment {
         cond: &Node,
         a: &Node,
         b: &Node,
-        pos: Position,
+        _pos: Position,
     ) -> Result<Object, Error> {
         if self.evaluate_expression(cond)?.to_bool() {
             self.evaluate_expression(a)
@@ -155,7 +155,7 @@ impl Environment {
         &mut self,
         left: &Node,
         right: &Node,
-        pos: Position,
+        _pos: Position,
     ) -> Result<Object, Error> {
         let b =
             self.evaluate_expression(left)?.to_bool() || self.evaluate_expression(right)?.to_bool();
@@ -166,7 +166,7 @@ impl Environment {
         &mut self,
         left: &Node,
         right: &Node,
-        pos: Position,
+        _pos: Position,
     ) -> Result<Object, Error> {
         let b =
             self.evaluate_expression(left)?.to_bool() && self.evaluate_expression(right)?.to_bool();
@@ -177,7 +177,7 @@ impl Environment {
         &mut self,
         left: &Node,
         right: &Node,
-        pos: Position,
+        _pos: Position,
     ) -> Result<Object, Error> {
         let b = self.evaluate_expression(left)? == self.evaluate_expression(right)?;
         Ok(Object::Bool(b))
