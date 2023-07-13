@@ -15,8 +15,17 @@ pub fn builtin_print(
             pos,
         ))
     } else {
-        let s = args[0].clone().to_string();
-        println!("{}", s);
-        Ok(args[0].clone())
+        let arg = args[0].clone();
+        let mut output = "".to_string();
+        match arg {
+            Object::Str(s) => {
+                output = s;
+            }
+            _ => {
+                output = output.to_string();
+            }
+        }
+        println!("{}", output);
+        Ok(Object::Str(output))
     }
 }
