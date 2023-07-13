@@ -130,6 +130,7 @@ impl Environment {
             Node::Return(value, pos) => self.evaluate_return(value, *pos),
             Node::IfElse(cond, a, b, pos) => self.evaluate_ifelse(cond, a, b, *pos),
             Node::CmpEq(left, right, pos) => self.evaluate_cmp_eq(left, right, *pos),
+            Node::LogicalNot(value, pos) => self.evaluate_logical_not(value, *pos),
             Node::LogicalOr(left, right, pos) => self.evaluate_logical_or(left, right, *pos),
             Node::LogicalAnd(left, right, pos) => self.evaluate_logical_and(left, right, *pos),
             Node::Nil(_pos) => Ok(Object::Nil),
@@ -149,6 +150,11 @@ impl Environment {
         } else {
             self.evaluate_expression(b)
         }
+    }
+
+    fn evaluate_logical_not(&mut self, value: &Node, _pos: Position) -> Result<Object, Error> {
+        let b = !self.evaluate_expression(value)?.to_bool();
+        Ok(Object::Bool(b))
     }
 
     fn evaluate_logical_or(
