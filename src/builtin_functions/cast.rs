@@ -34,3 +34,19 @@ pub fn to_str(
         Ok(Object::Str(args[0].to_string()))
     }
 }
+
+// convert any-to-int
+pub fn to_int(
+    args: Vec<Object>,
+    kwargs: BTreeMap<String, Object>,
+    pos: Position,
+) -> Result<Object, Error> {
+    if !kwargs.is_empty() || args.len() != 1 {
+        Err(Error::ArgumentError(
+            "function `int` takes only one argument.".to_string(),
+            pos,
+        ))
+    } else {
+        todo!()
+    }
+}
