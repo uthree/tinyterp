@@ -83,9 +83,9 @@ const RESERVED_WORDS: [&str; 11] = [
 
 peg::parser! {
     pub grammar tinyterp() for str {
-        rule newline() = ['\n' | ';']+
         rule _ ="#" ([^'\n'])* "\n"
-            / [' ' | '\n' | '\t']*
+            / [' ' | '\t' | '\n']*
+        rule newline() = [';' | '\n']+
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -130,7 +130,7 @@ peg::parser! {
         // Literals
         #[cache_left_rec]
         rule integer_literal() -> Node
-            = _ begin:position!() sign:$("-"?) value:$(['0'..='9']+) end:position!() _ {?
+            = begin:position!() sign:$("-"?) value:$(['0'..='9']+) end:position!() {?
                 let value = format!("{}{}", sign, value).parse::<i64>();
                 if value.is_ok() {
                     Ok(Node::IntegerLiteral(value.unwrap(), Position::new(begin, end)))
@@ -142,7 +142,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule float_literal() -> Node
-            = _ begin:position!() sign:$("-"?) value_1:$(['0'..='9']+) period() value_2:$(['0'..='9']+) end:position!() _ {?
+            = begin:position!() sign:$("-"?) value_1:$(['0'..='9']+) period() value_2:$(['0'..='9']+) end:position!() {?
                 let value = format!("{}{}.{}", sign, value_1, value_2).parse::<f64>();
                 if value.is_ok() {
                     Ok(Node::FloatLiteral(value.unwrap(), Position::new(begin, end)))
@@ -155,10 +155,10 @@ peg::parser! {
         // Nil
         #[cache_left_rec]
         rule nil_literal() -> Node
-            = _ begin:position!()  keyword_nil() end:position!() _ {
+            = begin:position!()  keyword_nil() end:position!() {
                 Node::Nil(Position::new(begin, end))
             }
-            / _ begin:position!()  left_paren() _ right_paren() end:position!() _ {
+            / begin:position!()  left_paren() _ right_paren() end:position!() {
                 Node::Nil(Position::new(begin, end))
             }
 
@@ -175,7 +175,7 @@ peg::parser! {
         // ientifier
         #[cache_left_rec]
         rule identifier() -> Node
-            = _ begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() _ {?
+            = begin:position!() name_initial:$(['a'..='z' | 'A'..='Z' | '_']) name:$(['a'..='z' | 'A'..='Z' | '_' | '0'..='9']*) end:position!() {?
                 let name = format!("{}{}", name_initial, name);
                 if RESERVED_WORDS.iter().any(|w| **w == name) {
                     Err("that name is reserved.")
@@ -188,7 +188,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         pub rule program() -> Node
-            = _ begin:position!() _ newline()*  _  seq:(expression() ** (_ newline() _)) _ newline()* end:position!() _ {
+            = begin:position!() _ newline()*  _  seq:(expression() ** newline()) _ (_ newline() _)* end:position!(){
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
@@ -218,7 +218,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule string_literal() -> Node
-            = _ begin:position!() "\"" s:parse_string() "\"" end:position!() _ {
+            = begin:position!() "\"" s:parse_string() "\"" end:position!() {
                 Node::StringLiteral(s, Position::new(begin, end))
             }
 
@@ -229,26 +229,26 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = begin:position!() _ left_brace() _ right_brace() end:position!() {
+            = begin:position!() left_brace() _ right_brace() end:position!() {
                 Node::Hash(vec![], Position::new(begin, end))
             }
-            / _ begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+            / begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (newline()+)) _ (_ newline() _)* _ right_brace() end:position!() {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** (_ newline() _)) _ newline()* _ right_brace() end:position!() _ {
+            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** ((_ newline() _)+)) _ (_ newline() _)* _ right_brace() end:position!() {
                 Node::Loop(seq, Position::new(begin, end))
             }
             / return_or_drop()
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
-            = _ begin:position!() keyword_return() _ expr:expression() end:position!() _ {
+            = begin:position!() keyword_return() _ expr:expression() end:position!() {
                 Node::Return(Box::new(expr), Position::new(begin, end))
             }
-            / _ begin:position!() keyword_return() end:position!() _ {
+            / begin:position!() keyword_return() end:position!() {
                 Node::Return(Box::new(Node::Nil(Position::new(begin, end))), Position::new(begin, end))
             }
-            / _ begin:position!() keyword_drop() _ identifiers:(identifier() ++ (_ comma() _)) _ end:position!() _ {
+            / begin:position!() keyword_drop() _ identifiers:(identifier() ++ (_ comma() _)) _ end:position!() {
                 let mut variable_names = vec![];
                 for identifier in identifiers {
                     if let Node::Identifier(s, _) = identifier {
@@ -280,7 +280,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule assign() -> Node
-            = _ begin:position!() left:assign_left() _ equal() _ right:assign_right() end:position!() _ {?
+            = begin:position!() left:assign_left() _ equal() _ right:assign_right() end:position!() {?
                 if left.len() == right.len() {
                     Ok(Node::Assign(left, right, Position::new(begin, end)))
                 }
@@ -292,31 +292,31 @@ peg::parser! {
 
         #[cache_left_rec]
         rule ifelse() -> Node
-            = _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() _ keyword_else() _ expr_false:expression() end:position!() _ {
+            = begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() _ keyword_else() _ expr_false:expression() end:position!() {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
             }
-            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() end:position!() _ {
+            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() end:position!() {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
             / logical_or()
 
         #[cache_left_rec]
         rule logical_or() -> Node
-            = _ begin:position!() left:logical_or() _ keyword_or() _ right:logical_and() end:position!() {
+            = begin:position!() left:logical_or() _ keyword_or() _ right:logical_and() end:position!() {
                 Node::LogicalOr(Box::new(left), Box::new(right), Position::new(begin, end))
             }
             / logical_and()
 
         #[cache_left_rec]
         rule logical_and() -> Node
-            = _ begin:position!() left:logical_and() _ keyword_and() _ right:logical_not() end:position!() {
+            = begin:position!() left:logical_and() _ keyword_and() _ right:logical_not() end:position!() {
                 Node::LogicalAnd(Box::new(left), Box::new(right), Position::new(begin, end))
             }
             / logical_not()
 
         #[cache_left_rec]
         rule logical_not() -> Node
-            =  _ begin:position!() keyword_not() _ v:compare() end:position!() _ {
+            = begin:position!() keyword_not() _ v:compare() end:position!() {
                 Node::LogicalNot(Box::new(v), Position::new(begin, end))
             }
             / compare()
@@ -324,22 +324,22 @@ peg::parser! {
         // Compare
         #[cache_left_rec]
         rule compare() -> Node
-            = _ begin:position!() left:compare() _ operator_cmp_eq() _ right:arithmetic_expression() end:position!() _ {
+            = begin:position!() left:compare() _ operator_cmp_eq() _ right:arithmetic_expression() end:position!() {
                 Node::CmpEq(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:compare() _ operator_cmp_noteq() _ right:arithmetic_expression() end:position!() _ {
+            / begin:position!() left:compare() _ operator_cmp_noteq() _ right:arithmetic_expression() end:position!() {
                 Node::CmpNotEq(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:compare() _ operator_cmp_lt() _ right:arithmetic_expression() end:position!() _ {
+            / begin:position!() left:compare() _ operator_cmp_lt() _ right:arithmetic_expression() end:position!() {
                 Node::CmpLessThan(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:compare() _ operator_cmp_lteq() _ right:arithmetic_expression() end:position!() _ {
+            / begin:position!() left:compare() _ operator_cmp_lteq() _ right:arithmetic_expression() end:position!() {
                 Node::CmpLessThanEq(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:compare() _ operator_cmp_gt() _ right:arithmetic_expression() end:position!() _ {
+            / begin:position!() left:compare() _ operator_cmp_gt() _ right:arithmetic_expression() end:position!() {
                 Node::CmpGreaterThan(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:compare() _ operator_cmp_gteq() _ right:arithmetic_expression() end:position!() _ {
+            / begin:position!() left:compare() _ operator_cmp_gteq() _ right:arithmetic_expression() end:position!() {
                 Node::CmpGreaterThanEq(Box::new(left), Box::new(right), Position::new(begin, end))
             }
             / arithmetic_expression()
@@ -347,30 +347,30 @@ peg::parser! {
         // Arithmetic Expressions
         #[cache_left_rec]
         rule arithmetic_expression() -> Node
-            = _ begin:position!() left:arithmetic_expression() _ operator_add() _ right:term() end:position!() _ {
+            = begin:position!() left:arithmetic_expression() _ operator_add() _ right:term() end:position!() {
                 Node::Add(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:arithmetic_expression() _ operator_sub() _ right:term() end:position!() _ {
+            / begin:position!() left:arithmetic_expression() _ operator_sub() _ right:term() end:position!() {
                 Node::Sub(Box::new(left), Box::new(right), Position::new(begin, end))
             }
             / term()
 
         #[cache_left_rec]
         rule term() -> Node
-            = _ begin:position!() left:term() _ operator_mul() _ right:number_with_pow() end:position!() _ {
+            = begin:position!() left:term() _ operator_mul() _ right:number_with_pow() end:position!() {
                 Node::Mul(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() left:term() _ operator_div() _ right:number_with_pow() end:position!() _ {
+            /begin:position!() left:term() _ operator_div() _ right:number_with_pow() end:position!() {
                 Node::Div(Box::new(left), Box::new(right), Position::new(begin, end))
             }
             / number_with_pow()
 
         #[cache_left_rec]
         rule number_with_pow() -> Node
-            = _ begin:position!() left:number_with_pow() _ operator_pow() _ right:call_function() end:position!() _ {
+            = begin:position!() left:number_with_pow() _ operator_pow() _ right:call_function() end:position!() {
                 Node::Pow(Box::new(left), Box::new(right), Position::new(begin, end))
             }
-            / _ begin:position!() operator_sub() _ value:call_function() end:position!() _ {
+            / begin:position!() operator_sub() _ value:call_function() end:position!() {
                 Node::Neg(Box::new(value), Position::new(begin, end))
             }
             / call_function()
@@ -379,7 +379,7 @@ peg::parser! {
         // Call Function
         #[cache_left_rec]
         rule argument() -> (Option<String>, Node)
-            = _ key:identifier() _ equal() _ value:expression() {
+            = key:identifier() _ equal() _ value:expression() {
                 if let Node::Identifier(key, _) = key {
                     (Some(key), value)
                 }
@@ -409,7 +409,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule call_function() -> Node
-            = _ begin:position!() callable:call_function() left_paren() _ args:arguments() _ right_paren() end:position!() _ {
+            = begin:position!() callable:call_function() left_paren() _ args:arguments() _ right_paren() end:position!() {
                 let (v, h) = args;
                 Node::CallFunction {
                     callable: Box::new(callable),
@@ -422,7 +422,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule get_attr() -> Node
-            = _ begin:position!() reciever:get_attr() _ period() _ attribute_name:identifier() end:position!() _ {
+            = begin:position!() reciever:get_attr() _ period() _ attribute_name:identifier() end:position!() {
                 let mut attr_name: String;
                 if let Node::Identifier(name, _) = attribute_name {
                     attr_name = name;
@@ -432,23 +432,23 @@ peg::parser! {
                 }
                 Node::GetAttribute(Box::new(reciever), Box::new(Node::StringLiteral(attr_name, Position::new(begin, end))), Position::new(begin, end))
             }
-            / _ begin:position!() reciever:get_attr() _ left_bracket() _ expr:expression()  _ right_bracket() _ end:position!() _ {
+            / begin:position!() reciever:get_attr() _ left_bracket() _ expr:expression()  _ right_bracket() _ end:position!() {
                 Node::GetAttribute(Box::new(reciever), Box::new(expr), Position::new(begin, end))
             }
-            / _ begin:position!() reciever:get_attr() _ left_bracket() _ elements:(expression() ** (_ comma() _))  _ right_bracket() _ end:position!() _ {
+            / begin:position!() reciever:get_attr() _ left_bracket() _ elements:(expression() ** (_ comma() _))  _ right_bracket() _ end:position!() {
                 Node::GetAttribute(Box::new(reciever), Box::new(Node::List(elements, Position::new(begin, end))), Position::new(begin, end))
             }
             / hash()
 
         #[cache_left_rec]
         rule hash_element() -> (Node, Node)
-            = _ key:expression() _ right_arrow() _ value:expression() _ {
+            = _ key:expression() _ right_arrow() _ value:expression() {
                 (key, value)
             }
 
         #[cache_left_rec]
         rule hash() -> Node
-            = _ begin:position!() left_brace() _ elements:(hash_element() ** (_ comma() _)) _ comma()* _ right_brace() end:position!() _ {
+            = begin:position!() left_brace() _ elements:(hash_element() ** (_ comma() _)) _ comma()* _ right_brace() end:position!() {
                 let mut out = vec![];
                 for (k ,v) in elements {
                     out.push((k, v));
@@ -459,7 +459,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule list() -> Node
-            = _ begin:position!() left_bracket() elements:(expression() ** (_ comma()  _)) _ comma()*  right_bracket()  end:position!() _ {
+            = begin:position!() left_bracket() elements:(expression() ** (_ comma()  _)) _ comma()*  right_bracket()  end:position!() {
                 Node::List(elements, Position::new(begin, end))
             }
             / function()
@@ -467,7 +467,7 @@ peg::parser! {
         // Function Literal
         #[cache_left_rec]
         rule argument_signature() -> (String, Option<Node>)
-            = _ key:identifier() _ equal() _ value:(expression()) {
+            = key:identifier() _ equal() _ value:(expression()) {
                 if let Node::Identifier(key_string, _) = key {
                     (key_string, Some(value))
                 }
@@ -503,7 +503,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule function() -> Node
-            = _ begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() seq:sequence() _ end:position!() _ {
+            = begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() _ seq:sequence() _ end:position!() {
                 let (args, kwargs) = args;
                 Node::Function {
                     arguments: args,
@@ -522,7 +522,7 @@ peg::parser! {
             / nil_literal()
             / bool_literal()
             / identifier()
-            / _ begin:position!() left_paren() _ expression:expression() _ right_paren() end:position!() _ {
+            / begin:position!() left_paren() _ expression:expression() _ right_paren() end:position!() {
                 expression
             }
     }

@@ -22,7 +22,7 @@ pub fn builtin_print(
                 output = s;
             }
             _ => {
-                output = output.to_string();
+                output = arg.to_string();
             }
         }
         println!("{}", output);
