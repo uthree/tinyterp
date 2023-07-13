@@ -130,6 +130,16 @@ impl Environment {
             Node::Return(value, pos) => self.evaluate_return(value, *pos),
             Node::IfElse(cond, a, b, pos) => self.evaluate_ifelse(cond, a, b, *pos),
             Node::CmpEq(left, right, pos) => self.evaluate_cmp_eq(left, right, *pos),
+            Node::CmpLessThan(left, right, pos) => self.evaluate_cmp_less_than(left, right, *pos),
+            Node::CmpLessThanEq(left, right, pos) => {
+                self.evaluate_cmp_less_than_eq(left, right, *pos)
+            }
+            Node::CmpGreaterThan(left, right, pos) => {
+                self.evaluate_cmp_greater_than(left, right, *pos)
+            }
+            Node::CmpGreaterThanEq(left, right, pos) => {
+                self.evaluate_cmp_greater_than_eq(left, right, *pos)
+            }
             Node::LogicalNot(value, pos) => self.evaluate_logical_not(value, *pos),
             Node::LogicalOr(left, right, pos) => self.evaluate_logical_or(left, right, *pos),
             Node::LogicalAnd(left, right, pos) => self.evaluate_logical_and(left, right, *pos),
@@ -187,6 +197,46 @@ impl Environment {
     ) -> Result<Object, Error> {
         let b = self.evaluate_expression(left)? == self.evaluate_expression(right)?;
         Ok(Object::Bool(b))
+    }
+
+    fn evaluate_cmp_less_than(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .less_than(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_cmp_less_than_eq(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .less_than_eq(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_cmp_greater_than(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .greater_than(self.evaluate_expression(right)?, pos)
+    }
+
+    fn evaluate_cmp_greater_than_eq(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        self.evaluate_expression(left)?
+            .greater_than_eq(self.evaluate_expression(right)?, pos)
     }
 
     fn evaluate_neg(&mut self, value: &Node, pos: Position) -> Result<Object, Error> {

@@ -100,6 +100,122 @@ impl Object {
     }
 
     // Operators
+    pub fn less_than(self, other: Self, pos: Position) -> Result<Object, Error> {
+        match self {
+            Object::Int(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l < r)),
+                Object::Float(r) => Ok(Object::Bool((l as f64) < r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare int < {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Float(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l < r as f64)),
+                Object::Float(r) => Ok(Object::Bool(l < r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare float < {}", other.type_name()),
+                    pos,
+                )),
+            },
+            _ => Err(Error::TypeError(
+                format!(
+                    "cannot compare {} < {}",
+                    self.type_name(),
+                    other.type_name()
+                ),
+                pos,
+            )),
+        }
+    }
+
+    pub fn less_than_eq(self, other: Self, pos: Position) -> Result<Object, Error> {
+        match self {
+            Object::Int(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l <= r)),
+                Object::Float(r) => Ok(Object::Bool((l as f64) <= r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare int <= {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Float(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l <= r as f64)),
+                Object::Float(r) => Ok(Object::Bool(l <= r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare float <= {}", other.type_name()),
+                    pos,
+                )),
+            },
+            _ => Err(Error::TypeError(
+                format!(
+                    "cannot compare {} <= {}",
+                    self.type_name(),
+                    other.type_name()
+                ),
+                pos,
+            )),
+        }
+    }
+
+    pub fn greater_than(self, other: Self, pos: Position) -> Result<Object, Error> {
+        match self {
+            Object::Int(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l > r)),
+                Object::Float(r) => Ok(Object::Bool((l as f64) > r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare int > {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Float(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l > r as f64)),
+                Object::Float(r) => Ok(Object::Bool(l > r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare float > {}", other.type_name()),
+                    pos,
+                )),
+            },
+            _ => Err(Error::TypeError(
+                format!(
+                    "cannot compare {} > {}",
+                    self.type_name(),
+                    other.type_name()
+                ),
+                pos,
+            )),
+        }
+    }
+
+    pub fn greater_than_eq(self, other: Self, pos: Position) -> Result<Object, Error> {
+        match self {
+            Object::Int(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l >= r)),
+                Object::Float(r) => Ok(Object::Bool((l as f64) >= r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare int >= {}", other.type_name()),
+                    pos,
+                )),
+            },
+            Object::Float(l) => match other {
+                Object::Int(r) => Ok(Object::Bool(l >= r as f64)),
+                Object::Float(r) => Ok(Object::Bool(l >= r)),
+                _ => Err(Error::TypeError(
+                    format!("cannot compare float >= {}", other.type_name()),
+                    pos,
+                )),
+            },
+            _ => Err(Error::TypeError(
+                format!(
+                    "cannot compare {} >= {}",
+                    self.type_name(),
+                    other.type_name()
+                ),
+                pos,
+            )),
+        }
+    }
+
     pub fn neg(self, pos: Position) -> Result<Object, Error> {
         match self {
             Object::Int(v) => Ok(Object::Int(-v)),
