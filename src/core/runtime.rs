@@ -6,7 +6,7 @@ pub use crate::core::parser::Position;
 use std::collections::BTreeMap;
 
 pub struct Runtime {
-    env: Environment,
+    pub env: Environment,
 }
 
 impl Runtime {

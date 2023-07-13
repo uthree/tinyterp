@@ -1,7 +1,8 @@
 mod builtin_functions;
 mod core;
 
-use tinyterp::Runtime;
+use crate::builtin_functions::load_builtin_print;
+use crate::core::runtime::Runtime;
 
 use std::env;
 
@@ -10,6 +11,7 @@ fn main() {
     if args.len() == 1 {
         // start REPL
         let mut rt = Runtime::new();
+        load_builtin_print(&mut rt.env);
         loop {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer).unwrap();
