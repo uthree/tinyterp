@@ -1,0 +1,8 @@
+twice = (fn) -> {
+	fn();
+	fn();
+};
+say_hello = () -> {
+	print("hello");
+};
+twice(say_hello);

@@ -85,7 +85,7 @@ peg::parser! {
     pub grammar tinyterp() for str {
         rule _ ="#" ([^'\n'])* "\n"
             / [' ' | '\t' | '\n']*
-        rule newline() = [';' | '\n']+
+        rule newline() = [';' | '\n']+ _
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -232,10 +232,10 @@ peg::parser! {
             = begin:position!() left_brace() _ right_brace() end:position!() {
                 Node::Hash(vec![], Position::new(begin, end))
             }
-            / begin:position!() left_brace() _ newline()* _ seq:(sequence() ** (newline()+)) _ (_ newline() _)* _ right_brace() end:position!() {
+            / begin:position!() left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** ((_ newline() _)+)) _ (_ newline() _)* _ right_brace() end:position!() {
+            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() {
                 Node::Loop(seq, Position::new(begin, end))
             }
             / return_or_drop()

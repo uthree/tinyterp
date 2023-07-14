@@ -29,14 +29,6 @@ impl Environment {
         }
     }
 
-    // clone store
-    pub fn clone_store(&self) -> Self {
-        Environment {
-            store: self.store.clone(),
-            outer: None,
-        }
-    }
-
     // get object
     pub fn get(&self, name: &str) -> Option<Object> {
         match self.store.get(name) {
@@ -324,6 +316,7 @@ impl Environment {
                 // set arguments
                 for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
                     let r = self.evaluate_expression(value_node)?;
+                    //println!("{}, {:?}", key, r);
                     env.set(key.to_string(), r);
                 }
                 for key in kwargs.keys() {
@@ -361,7 +354,7 @@ impl Environment {
             kwargs,
             body: sequence,
             pos,
-            env: self.clone_store(),
+            env: self.clone(),
         })
     }
 
@@ -372,7 +365,7 @@ impl Environment {
         _pos: Position,
     ) -> Result<Object, Error> {
         let mut last_obj = Object::Nil;
-        let mut env = self.clone_store().new_outer();
+        let mut env = self.clone().new_outer();
         for node in nodes {
             match node {
                 Node::Return(n, _p) => {
