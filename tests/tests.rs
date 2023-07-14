@@ -2,7 +2,7 @@ use tinyterp::Runtime;
 
 pub fn run(code: &str) -> String {
     let mut rt = Runtime::new();
-    tinyterp::builtin_functions::load_builtin_print(&mut rt.env);
+    tinyterp::builtin_functions::load_builtin_stdio(&mut rt.env);
     rt.evaluate(code).unwrap().to_string()
 }
 

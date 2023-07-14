@@ -4,7 +4,7 @@ mod core;
 use std::fs::File;
 use std::io::prelude::*;
 
-use crate::builtin_functions::load_builtin_print;
+use crate::builtin_functions::load_builtin_stdio;
 use crate::core::runtime::Runtime;
 
 use std::env;
@@ -14,7 +14,7 @@ fn main() {
     if args.len() == 1 {
         // start REPL
         let mut rt = Runtime::new();
-        load_builtin_print(&mut rt.env);
+        load_builtin_stdio(&mut rt.env);
 
         loop {
             let mut buffer = String::new();
@@ -38,7 +38,7 @@ fn main() {
             .expect("something went wrong reading the file");
 
         let mut rt = Runtime::new();
-        load_builtin_print(&mut rt.env);
+        load_builtin_stdio(&mut rt.env);
 
         let result = rt.evaluate(&content);
         if let Err(err) = result {

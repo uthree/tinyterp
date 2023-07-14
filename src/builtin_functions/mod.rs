@@ -6,7 +6,7 @@ use crate::builtin_functions::cast::{get_type, to_float, to_int, to_str};
 use crate::builtin_functions::math::{
     abs, acos, asin, atan, cos, cosh, exp, ln, modulo, sin, sinh, sqrt, tan, tanh,
 };
-use crate::builtin_functions::print::builtin_print;
+use crate::builtin_functions::print::{builtin_input, builtin_print};
 
 use crate::core::environment::Environment;
 use crate::core::object::Object;
@@ -36,6 +36,7 @@ pub fn load_builtin_functions(env: &mut Environment) {
     env.set("pi".to_string(), Object::Float(std::f64::consts::PI));
 }
 
-pub fn load_builtin_print(env: &mut Environment) {
-    env.add_function("print", builtin_print)
+pub fn load_builtin_stdio(env: &mut Environment) {
+    env.add_function("print", builtin_print);
+    env.add_function("input", builtin_input);
 }
