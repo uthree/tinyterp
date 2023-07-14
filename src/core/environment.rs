@@ -63,18 +63,7 @@ impl Environment {
 
     pub fn evaluate_program(&mut self, node: &Node) -> Result<Object, Error> {
         if let Node::Sequence(seq, _pos) = node {
-            let mut last_obj = Object::Nil;
-            for node in seq {
-                match node {
-                    Node::Return(n, _p) => {
-                        return Ok(self.evaluate_expression(n)?.remove_return());
-                    }
-                    _ => {
-                        last_obj = self.evaluate_expression(node)?;
-                    }
-                }
-            }
-            Ok(last_obj)
+            self.evaluate_sequence(seq, false, Position::new(0, 0))
         } else {
             unreachable!();
         }
@@ -83,6 +72,7 @@ impl Environment {
     fn evaluate_expression(&mut self, node: &Node) -> Result<Object, Error> {
         match node {
             Node::Sequence(seq, pos) => self.evaluate_sequence(seq, false, *pos),
+            Node::Loop(seq, pos) => self.evaluate_loop(seq, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::Bool(b, pos) => self.evaluate_bool_literal(*b, *pos),
             Node::FloatLiteral(f, pos) => self.evaluate_float_literal(*f, *pos),
@@ -148,9 +138,15 @@ impl Environment {
         _pos: Position,
     ) -> Result<Object, Error> {
         if self.evaluate_expression(cond)?.to_bool() {
-            self.evaluate_expression(a)
+            match a {
+                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, *pos),
+                _ => self.evaluate_expression(a),
+            }
         } else {
-            self.evaluate_expression(b)
+            match b {
+                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, *pos),
+                _ => self.evaluate_expression(b),
+            }
         }
     }
 
@@ -367,21 +363,37 @@ impl Environment {
         let mut last_obj = Object::Nil;
         let mut env = self.clone().new_outer();
         for node in nodes {
-            match node {
-                Node::Return(n, _p) => {
+            let out = env.evaluate_expression(node)?;
+            match out {
+                Object::Return(obj) => {
                     if bypass_return {
-                        return env.evaluate_expression(node);
+                        return Ok(Object::Return(obj));
                     } else {
-                        return env.evaluate_expression(n);
+                        return Ok(*obj);
                     }
                 }
                 _ => {
-                    last_obj = env.evaluate_expression(node)?;
+                    last_obj = out;
                 }
             }
         }
         Ok(last_obj)
     }
+
+    fn evaluate_loop(&mut self, nodes: &[Node], _pos: Position) -> Result<Object, Error> {
+        let mut last_obj = Object::Nil;
+        let mut env = self.clone().new_outer();
+        loop {
+            for node in nodes {
+                let out = env.evaluate_expression(node)?;
+                match out {
+                    Object::Return(obj) => return Ok(*obj),
+                    _ => {}
+                }
+            }
+        }
+    }
+
     fn evaluate_bool_literal(&mut self, b: bool, _pos: Position) -> Result<Object, Error> {
         Ok(Object::Bool(b))
     }
