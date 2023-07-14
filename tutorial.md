@@ -192,3 +192,31 @@ a[0] #-> "one"
 hashはkeyとvalueがペアになったリストのようなものである。
 keyとしては文字列(str)のみが利用可能である。
 
+### 組み込み関数・変数一覧
+
+#### 型とキャスト
+|  関数名  |  挙動  |
+| - | - |
+| type(a) | aの型名をstrで返す。 |
+| str(a) | aをstr型に変換して返す。 |
+| int(a) | aをint型に変換して返す。 |
+| float(a) | aをfloat型に変換して返す。 |
+
+#### 数学
+|  関数名  |  挙動  |
+| ---- | ---- |
+|  abs(a)  |  aの絶対値  |
+|  ln(a)  |  ln(a)  |
+|  exp(a)  | eのa乗。ただしeはネイピア数。 |
+|  sin(a)  |  sin(a)  |
+|  cos(a)  |  cos(a)  |
+|  tan(a)  |  tan(a)  |
+|  asin(a)  |  asin(a)  |
+|  acos(a)  |  acos(a)  |
+|  atan(a)  |  atan(a)  |
+|  sinh(a)  |  sinh(a)  |
+|  cosh(a)  |  cos(a)  |
+|  tanh(a)  |  tanh(a)  |
+| pi | π (円周率) |
+
+
