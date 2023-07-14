@@ -218,6 +218,6 @@ keyとしては文字列(str)のみが利用可能である。
 |  sinh(a)  |  sinh(a)  |
 |  cosh(a)  |  cos(a)  |
 |  tanh(a)  |  tanh(a)  |
+| mod(a, b) | aをbで除算した余りを返す。 |
 | pi | π (円周率) |
-
 

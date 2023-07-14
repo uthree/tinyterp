@@ -4,7 +4,7 @@ pub mod print;
 
 use crate::builtin_functions::cast::{get_type, to_float, to_int, to_str};
 use crate::builtin_functions::math::{
-    abs, acos, asin, atan, cos, cosh, exp, ln, sin, sinh, sqrt, tan, tanh,
+    abs, acos, asin, atan, cos, cosh, exp, ln, modulo, sin, sinh, sqrt, tan, tanh,
 };
 use crate::builtin_functions::print::builtin_print;
 
@@ -30,6 +30,7 @@ pub fn load_builtin_functions(env: &mut Environment) {
     env.add_function("ln", ln);
     env.add_function("sqrt", sqrt);
     env.add_function("abs", abs);
+    env.add_function("mod", modulo);
 
     //set pi
     env.set("pi".to_string(), Object::Float(std::f64::consts::PI));

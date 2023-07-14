@@ -301,3 +301,30 @@ pub fn abs(
         }
     }
 }
+
+pub fn modulo(
+    args: Vec<Object>,
+    kwargs: BTreeMap<String, Object>,
+    pos: Position,
+) -> Result<Object, Error> {
+    // this function takes only one argument.
+    if !kwargs.is_empty() || args.len() != 2 {
+        Err(Error::ArgumentError(
+            "function `mod` takes only two argument.".to_string(),
+            pos,
+        ))
+    } else {
+        if let (Object::Int(a), Object::Int(b)) = (args[0].clone(), args[1].clone()) {
+            Ok(Object::Int(a % b))
+        } else {
+            Err(Error::TypeError(
+                format!(
+                    "cannot calculate mod({}, {})",
+                    args[0].type_name(),
+                    args[1].type_name()
+                ),
+                pos,
+            ))
+        }
+    }
+}
