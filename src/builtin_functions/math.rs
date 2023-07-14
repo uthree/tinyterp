@@ -278,3 +278,26 @@ pub fn sqrt(
         }
     }
 }
+
+pub fn abs(
+    args: Vec<Object>,
+    kwargs: BTreeMap<String, Object>,
+    pos: Position,
+) -> Result<Object, Error> {
+    // this function takes only one argument.
+    if !kwargs.is_empty() || args.len() != 1 {
+        Err(Error::ArgumentError(
+            "function `abs` takes only one argument.".to_string(),
+            pos,
+        ))
+    } else {
+        match args[0].clone() {
+            Object::Int(i) => Ok(Object::Float((i as f64).abs())),
+            Object::Float(f) => Ok(Object::Float(f.abs())),
+            _ => Err(Error::TypeError(
+                format!("cannot calculate abs({})", args[0].type_name()),
+                pos,
+            )),
+        }
+    }
+}
