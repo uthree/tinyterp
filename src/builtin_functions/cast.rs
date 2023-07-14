@@ -31,7 +31,10 @@ pub fn to_str(
             pos,
         ))
     } else {
-        Ok(Object::Str(args[0].to_string()))
+        match &args[0] {
+            Object::Str(s) => Ok(Object::Str(s.clone())),
+            _ => Ok(Object::Str(args[0].to_string())),
+        }
     }
 }
 
