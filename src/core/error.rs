@@ -7,6 +7,7 @@ pub enum Error {
     ArgumentError(String, Position),
     DivideByZero(String, Position),
     ListOutOfRange(String, Position),
+    ParseError(String, Position),
 }
 
 pub fn generate_error_message(error: Error, code: &str) -> String {
