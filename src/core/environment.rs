@@ -63,7 +63,7 @@ impl Environment {
 
     pub fn evaluate_program(&mut self, node: &Node) -> Result<Object, Error> {
         if let Node::Sequence(seq, _pos) = node {
-            self.evaluate_sequence(seq, false, Position::new(0, 0))
+            self.evaluate_sequence(seq, false, false, Position::new(0, 0))
         } else {
             unreachable!();
         }
@@ -71,7 +71,7 @@ impl Environment {
 
     fn evaluate_expression(&mut self, node: &Node) -> Result<Object, Error> {
         match node {
-            Node::Sequence(seq, pos) => self.evaluate_sequence(seq, false, *pos),
+            Node::Sequence(seq, pos) => self.evaluate_sequence(seq, false, true, *pos),
             Node::Loop(seq, pos) => self.evaluate_loop(seq, *pos),
             Node::IntegerLiteral(i, pos) => self.evaluate_integer_literal(*i, *pos),
             Node::Bool(b, pos) => self.evaluate_bool_literal(*b, *pos),
@@ -139,12 +139,12 @@ impl Environment {
     ) -> Result<Object, Error> {
         if self.evaluate_expression(cond)?.to_bool() {
             match a {
-                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, *pos),
+                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, true, *pos),
                 _ => self.evaluate_expression(a),
             }
         } else {
             match b {
-                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, *pos),
+                Node::Sequence(nodes, pos) => self.evaluate_sequence(nodes, true, true, *pos),
                 _ => self.evaluate_expression(b),
             }
         }
@@ -358,22 +358,41 @@ impl Environment {
         &mut self,
         nodes: &[Node],
         bypass_return: bool,
+        enter_new_scope: bool,
         _pos: Position,
     ) -> Result<Object, Error> {
         let mut last_obj = Object::Nil;
-        let mut env = self.clone().new_outer();
-        for node in nodes {
-            let out = env.evaluate_expression(node)?;
-            match out {
-                Object::Return(obj) => {
-                    if bypass_return {
-                        return Ok(Object::Return(obj));
-                    } else {
-                        return Ok(*obj);
+        if enter_new_scope {
+            let mut env = self.clone().new_outer();
+            for node in nodes {
+                let out = env.evaluate_expression(node)?;
+                match out {
+                    Object::Return(obj) => {
+                        if bypass_return {
+                            return Ok(Object::Return(obj));
+                        } else {
+                            return Ok(*obj);
+                        }
+                    }
+                    _ => {
+                        last_obj = out;
                     }
                 }
-                _ => {
-                    last_obj = out;
+            }
+        } else {
+            for node in nodes {
+                let out = self.evaluate_expression(node)?;
+                match out {
+                    Object::Return(obj) => {
+                        if bypass_return {
+                            return Ok(Object::Return(obj));
+                        } else {
+                            return Ok(*obj);
+                        }
+                    }
+                    _ => {
+                        last_obj = out;
+                    }
                 }
             }
         }
