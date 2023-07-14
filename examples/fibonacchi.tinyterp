@@ -1,21 +1,21 @@
 fib = (n, fib=fib) -> {
 	if n == 1 or n == 2 then {
-		return n;
+		return n
 	}
 	else {
-		return fib(n-1) + fib(n-2);
-	};
-};
+		return fib(n-1) + fib(n-2)
+	}
+}
 
 n_times_recursive = (n, fn, n_times_recursive=n_times_recursive) -> {
 	if n == 0 {
-		return;
+		return
 	}
 	else {
-		n_times_recursive(n - 1, fn);
-		fn(n);
-	};
-};
+		n_times_recursive(n - 1, fn)
+		fn(n)
+	}
+}
 
-print("calculate fibonacchi(1) to fibonacchi(20)");
-n_times_recursive(20, (n)->{print(fib(n))});
+print("calculate fibonacchi(1) to fibonacchi(20)")
+n_times_recursive(20, (n)->{print(fib(n))})

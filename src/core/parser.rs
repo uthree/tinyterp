@@ -83,9 +83,9 @@ const RESERVED_WORDS: [&str; 11] = [
 
 peg::parser! {
     pub grammar tinyterp() for str {
-        rule _ ="#" ([^'\n'])* "\n"
-            / [' ' | '\t' | '\n']*
-        rule newline() = [';' | '\n']+ _
+        rule _ =  [' ' | '\t']*
+        rule comment() = ("#" ([^'\n'])* "\n")?
+        rule newline() = _ [';' | '\n']+ _ comment()
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -188,7 +188,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         pub rule program() -> Node
-            = begin:position!() _ newline()*  _  seq:(expression() ** newline()) _ (_ newline() _)* end:position!(){
+            = begin:position!() _ newline()? _ seq:sequence()* _ newline()? end:position!(){
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
@@ -222,23 +222,35 @@ peg::parser! {
                 Node::StringLiteral(s, Position::new(begin, end))
             }
 
-        #[cache_left_rec]
-        rule expression() -> Node
-            = sequence()
-
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = begin:position!() left_brace() _ right_brace() end:position!() {
+            = begin:position!() left_brace() _ right_brace() end:position!() _ newline()? _ {
                 Node::Hash(vec![], Position::new(begin, end))
             }
-            / begin:position!() left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() {
+            / begin:position!() left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() {
+            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Loop(seq, Position::new(begin, end))
             }
-            / return_or_drop()
+            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
+                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
+            }
+            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
+                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
+            }
+            / s:statement() _ newline()? _ {
+                s
+            }
+
+        #[cache_left_rec]
+        rule statement() -> Node
+            = e:expression()
+
+        #[cache_left_rec]
+        rule expression() -> Node
+            = e:return_or_drop()
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
@@ -287,16 +299,6 @@ peg::parser! {
                 else {
                     Err("The number on the right side and the left side must be the same.")
                 }
-            }
-            / ifelse()
-
-        #[cache_left_rec]
-        rule ifelse() -> Node
-            = begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() _ keyword_else() _ expr_false:expression() end:position!() {
-                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
-            }
-            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:expression() end:position!() {
-                Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
             / logical_or()
 
@@ -522,8 +524,9 @@ peg::parser! {
             / nil_literal()
             / bool_literal()
             / identifier()
-            / begin:position!() left_paren() _ expression:expression() _ right_paren() end:position!() {
-                expression
+            / begin:position!() left_paren() _ seq:sequence() _ right_paren() end:position!() {
+                seq
             }
+            / sequence()
     }
 }

@@ -1,7 +1,9 @@
 use tinyterp::Runtime;
 
 pub fn run(code: &str) -> String {
-    Runtime::new().evaluate(code).unwrap().to_string()
+    let mut rt = Runtime::new();
+    tinyterp::builtin_functions::load_builtin_print(&mut rt.env);
+    rt.evaluate(code).unwrap().to_string()
 }
 
 #[test]
@@ -40,4 +42,14 @@ fn list() {
     assert_eq!(run("[1]"), "[1]");
     assert_eq!(run("[1, 2, 3]"), "[1, 2, 3]");
     assert_eq!(run("[1, 2, [3, 4]]"), "[1, 2, [3, 4]]");
+}
+
+#[test]
+fn fibonacchi() {
+    run(include_str!("../examples/fibonacchi.tinyterp"));
+}
+
+#[test]
+fn fizzbuzz() {
+    run(include_str!("../examples/fizzbuzz.tinyterp"));
 }

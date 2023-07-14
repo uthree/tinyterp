@@ -1,16 +1,16 @@
-n = 0;
+n = 0
 loop {
-	n = n + 1;
+	n = n + 1
 	if mod(n, 15) == 0 {
-		print("fizzbuzz");
+		print("fizzbuzz")
 	} else if mod(n, 5) == 0 {
-		print("buzz");
+		print("buzz")
 	} else if mod(n, 3) == 0 {
-		print("fizz");
+		print("fizz")
 	} else {
-		print(str(n));
-	};
+		print(str(n))
+	}
 	if n == 100 {
-		return;
-	};
-};
+		return
+	}
+}
