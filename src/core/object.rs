@@ -129,6 +129,39 @@ impl Object {
         }
     }
 
+    pub fn get_attribute(self, index: Self, pos: Position) -> Result<Object, Error> {
+        match self {
+            Object::List(v) => match index {
+                Object::Int(i) => {
+                    let mut idx = i as usize;
+                    if i < 0 {
+                        idx = (-i) as usize;
+                    }
+                    if (i as usize) < v.len() {
+                        Ok(v[idx as usize].clone())
+                    } else {
+                        Err(Error::IndexOutOfRange(
+                            format!("index {} is out of range", i.to_string()),
+                            pos,
+                        ))
+                    }
+                }
+                _ => Err(Error::TypeError(
+                    format!("index must be int, given {}", index.type_name()),
+                    pos,
+                )),
+            },
+            _ => Err(Error::TypeError(
+                format!(
+                    "cannot calculate {}[{}]",
+                    self.type_name(),
+                    index.type_name()
+                ),
+                pos,
+            )),
+        }
+    }
+
     pub fn less_than_eq(self, other: Self, pos: Position) -> Result<Object, Error> {
         match self {
             Object::Int(l) => match other {

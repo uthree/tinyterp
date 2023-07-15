@@ -26,7 +26,7 @@ impl Runtime {
                 Err(generate_error_message(output.err().unwrap(), code))
             }
         } else {
-            Err("Syntax Error".to_string())
+            Err(format!("Syntax Error:\n\t{:?}", node.err().unwrap()))
         }
     }
 

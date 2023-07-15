@@ -41,14 +41,49 @@ impl Environment {
     }
 
     // set object
-    pub fn set(&mut self, name: String, value: Object) -> Object {
-        self.store.insert(name, value.clone());
+    pub fn set(&mut self, name: &str, value: Object) -> Object {
+        //println!("SET {:?} TO {} = {}", self, name, value);
+        match &mut self.outer {
+            Some(outer) => {
+                if outer.get(&name).is_some() {
+                    //println!("FOUND VALUE {} ON OUTER", name);
+                    outer.set(name, value.clone());
+                    //println!("SET VALUE.");
+                } else {
+                    //println!("NOT FOUND VALUE {} ON OUTER", name);
+                    self.store.insert(name.to_string(), value.clone());
+                    //println!("SET VALUE.");
+                }
+            }
+            None => {
+                //println!("THIS SCOPE IS OUTEST");
+                self.store.insert(name.to_string(), value.clone());
+                //println!("SET VALUE.");
+            }
+        }
         value
     }
 
     // drop object
-    pub fn drop(&mut self, name: String) {
-        self.store.remove(&name);
+    pub fn drop_value(&mut self, name: &str) {
+        match &mut self.outer {
+            Some(outer) => {
+                if outer.get(&name).is_some() {
+                    //println!("FOUND VALUE {} ON OUTER", name);
+                    outer.drop_value(name);
+                    //println!("DROPPED VALUE.");
+                } else {
+                    //println!("NOT FOUND VALUE {} ON OUTER", name);
+                    self.store.remove(name);
+                    //println!("DROPPED VALUE.");
+                }
+            }
+            None => {
+                //println!("THIS SCOPE IS OUTEST");
+                self.store.remove(name);
+                //println!("DROPPED VALUE.");
+            }
+        }
     }
 
     // add built-in(Rust) function
@@ -125,6 +160,7 @@ impl Environment {
             Node::LogicalNot(value, pos) => self.evaluate_logical_not(value, *pos),
             Node::LogicalOr(left, right, pos) => self.evaluate_logical_or(left, right, *pos),
             Node::LogicalAnd(left, right, pos) => self.evaluate_logical_and(left, right, *pos),
+            Node::GetAttribute(left, right, pos) => self.evaluate_get_attribute(left, right, *pos),
             Node::Nil(_pos) => Ok(Object::Nil),
             _ => Ok(Object::Nil),
         }
@@ -148,6 +184,17 @@ impl Environment {
                 _ => self.evaluate_expression(b),
             }
         }
+    }
+
+    fn evaluate_get_attribute(
+        &mut self,
+        left: &Node,
+        right: &Node,
+        pos: Position,
+    ) -> Result<Object, Error> {
+        let left_obj = self.evaluate_expression(left)?;
+        let right_obj = self.evaluate_expression(right)?;
+        left_obj.get_attribute(right_obj, pos)
     }
 
     fn evaluate_logical_not(&mut self, value: &Node, _pos: Position) -> Result<Object, Error> {
@@ -313,7 +360,7 @@ impl Environment {
                 for (key, value_node) in args.iter().zip(arg_nodes.iter()) {
                     let r = self.evaluate_expression(value_node)?;
                     //println!("{}, {:?}", key, r);
-                    env.set(key.to_string(), r);
+                    env.set(key, r);
                 }
                 for key in kwargs.keys() {
                     let mut value_node = None;
@@ -323,7 +370,7 @@ impl Environment {
                         value_node = Some(kwargs.get(key).unwrap())
                     }
                     let r = self.evaluate_expression(value_node.unwrap())?;
-                    env.set(key.to_string(), r);
+                    env.set(key, r);
                 }
                 // call function
                 Ok(env.evaluate_expression(&body)?.remove_return())
@@ -439,7 +486,7 @@ impl Environment {
             let r = self.evaluate_expression(&rights[0])?;
             match &lefts[0] {
                 Node::Identifier(name, _n_pos) => {
-                    self.set(name.clone(), r.clone());
+                    self.set(name, r.clone());
                 }
                 _ => {
                     todo!()
@@ -462,8 +509,8 @@ impl Environment {
 
     fn evaluate_drop(&mut self, names: &[String], pos: Position) -> Result<Object, Error> {
         for name in names {
-            if self.store.contains_key(name) {
-                self.drop(name.clone());
+            if self.get(name).is_some() {
+                self.drop_value(name);
             } else {
                 return Err(Error::VariableNotInitialized(name.clone(), pos));
             }

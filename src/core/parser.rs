@@ -83,9 +83,11 @@ const RESERVED_WORDS: [&str; 11] = [
 
 peg::parser! {
     pub grammar tinyterp() for str {
-        rule _ =  [' ' | '\t']*
-        rule comment() = ("#" ([^'\n'])* "\n")?
-        rule newline() = _ [';' | '\n']+ _ comment()
+        rule _ = ignore()*
+        rule ignore() = comment()
+            / [' ' | '\t']+
+        rule comment() = ("#" ([^'\n'])* "\n")
+        rule newline() = (ignore()* [';' | '\n'] ignore()*)+
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -188,7 +190,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         pub rule program() -> Node
-            = begin:position!() _ newline()? _ seq:sequence()* _ newline()? end:position!(){
+            = _ begin:position!() _ newline()? _ seq:sequence()* _ newline()? end:position!() _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
@@ -225,28 +227,28 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = begin:position!() left_brace() _ right_brace() end:position!() _ newline()? _ {
+            = _ begin:position!() left_brace() _ right_brace() end:position!() _ newline()? _ {
                 Node::Hash(vec![], Position::new(begin, end))
             }
-            / begin:position!() left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Loop(seq, Position::new(begin, end))
             }
-            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
             }
-            / begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
-            / s:statement() _ newline()? _ {
+            / _ s:statement() _ newline()? _ {
                 s
             }
 
         #[cache_left_rec]
         rule statement() -> Node
-            = e:expression()
+            = expression()
 
         #[cache_left_rec]
         rule expression() -> Node

@@ -1,0 +1,12 @@
+s = "a"
+{
+	s = s + "b"
+}
+print(s) # ab
+
+
+t = "t"
+{
+	drop t
+}
+print(t) # Error

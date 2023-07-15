@@ -6,7 +6,7 @@ pub enum Error {
     TypeError(String, Position),
     ArgumentError(String, Position),
     DivideByZero(String, Position),
-    ListOutOfRange(String, Position),
+    IndexOutOfRange(String, Position),
     ParseError(String, Position),
 }
 

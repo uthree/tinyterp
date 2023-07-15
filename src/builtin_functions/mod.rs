@@ -33,7 +33,7 @@ pub fn load_builtin_functions(env: &mut Environment) {
     env.add_function("mod", modulo);
 
     //set pi
-    env.set("pi".to_string(), Object::Float(std::f64::consts::PI));
+    env.set("pi", Object::Float(std::f64::consts::PI));
 }
 
 pub fn load_builtin_stdio(env: &mut Environment) {

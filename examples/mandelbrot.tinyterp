@@ -1,0 +1,67 @@
+# complex is [float, float]
+
+zmul = (z1, z2) -> {
+	a, b, c, d = z1[0], z1[1], z2[0], z2[1]
+	[a * c - b * d, a * d + b * c]
+}
+
+zadd = (z1, z2) -> {
+	a, b, c, d = z1[0], z1[1], z2[0], z2[1]
+	[a + c, b + d]
+}
+
+zabs = (z) -> {
+	a, b = z[0], z[1]
+	sqrt(a ** 2 + b ** 2)
+}
+
+in_mandel = (c, n=20) -> {
+	counter = 0
+	z = [0, 0]
+	loop {
+		if zabs(z) > 2.0 {
+			# break the loop and return true
+			return return true
+		}
+		z = zadd(zmul(z, z), c)
+		if counter > n {
+			# break the loop and return false
+			return return false
+		}
+		counter = counter + 1
+	}
+}
+
+# draw mandelbrot set
+x, y = 0, 0
+nx, ny = 80, 24
+xmin, ymin, xmax, ymax = -2.0, -2.0, 2.0, 2.0
+dx = (xmax - xmin)/nx
+dy = (ymax - ymin)/ny
+
+iy = 0
+loop {
+	if iy >= ny {
+		return
+	}
+	s = "";
+	ix = 0
+	loop {
+		if ix >= nx {
+			return
+		}
+		
+		x = xmin + dx * ix
+		y = ymin + dy * iy
+		
+		if in_mandel([x, y]) {
+			s = s + "."
+		} else {
+			s = s + "#"
+		}
+
+		ix = ix + 1
+	}
+	print(s)
+	iy = iy + 1
+}
