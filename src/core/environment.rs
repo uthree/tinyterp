@@ -5,11 +5,11 @@ use crate::core::parser::Node;
 use crate::core::parser::Position;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
 pub struct Environment {
-    store: Rc<RefCell<BTreeMap<String, Object>>>,
+    store: Arc<RefCell<BTreeMap<String, Object>>>,
     outer: Option<Box<Environment>>,
 }
 
@@ -25,7 +25,7 @@ impl Clone for Environment {
 impl Environment {
     pub fn new() -> Self {
         let mut env = Environment {
-            store: Rc::new(RefCell::new(BTreeMap::new())),
+            store: Arc::new(RefCell::new(BTreeMap::new())),
             outer: None,
         };
         load_builtin_functions(&mut env);
@@ -35,7 +35,7 @@ impl Environment {
     // initialize new scope
     pub fn new_outer(self) -> Self {
         Environment {
-            store: Rc::new(RefCell::new(BTreeMap::new())),
+            store: Arc::new(RefCell::new(BTreeMap::new())),
             outer: Some(Box::new(self)),
         }
     }
