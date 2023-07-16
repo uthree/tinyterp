@@ -15,7 +15,7 @@ zabs = (z) -> {
 	sqrt(a ** 2 + b ** 2)
 }
 
-in_mandel = (c, n=20) -> {
+in_mandel = (c, n=50) -> {
 	counter = 0
 	z = [0, 0]
 	loop {
@@ -34,8 +34,8 @@ in_mandel = (c, n=20) -> {
 
 # draw mandelbrot set
 x, y = 0, 0
-nx, ny = 100, 100
-xmin, ymin, xmax, ymax = -2.0, -2.0, 2.0, 2.0
+nx, ny = 100, 50
+xmin, ymin, xmax, ymax = -1.5, -1.5, 1.5, 1.5
 dx = (xmax - xmin)/nx
 dy = (ymax - ymin)/ny
 
