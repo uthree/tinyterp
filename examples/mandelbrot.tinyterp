@@ -34,7 +34,7 @@ in_mandel = (c, n=20) -> {
 
 # draw mandelbrot set
 x, y = 0, 0
-nx, ny = 80, 20
+nx, ny = 100, 100
 xmin, ymin, xmax, ymax = -2.0, -2.0, 2.0, 2.0
 dx = (xmax - xmin)/nx
 dy = (ymax - ymin)/ny
