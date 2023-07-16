@@ -1,8 +1,6 @@
 # complex is [float, float]
 
 zmul = (z1, z2) -> {
-	print(z1)
-	print(x2)
 	a, b, c, d = z1[0], z1[1], z2[0], z2[1]
 	[a * c - b * d, a * d + b * c]
 }
@@ -17,7 +15,7 @@ zabs = (z) -> {
 	sqrt(a ** 2 + b ** 2)
 }
 
-in_mandel = (c, n=50) -> {
+in_mandel = (pos, n=50) -> {
 	counter = 0
 	z = [0, 0]
 	loop {
@@ -25,7 +23,7 @@ in_mandel = (c, n=50) -> {
 			# break the loop and return true
 			return return true
 		}
-		z = zadd(zmul(z, z), c)
+		z = zadd(zmul(z, z), pos)
 		if counter > n {
 			# break the loop and return false
 			return return false
