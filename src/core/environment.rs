@@ -3,11 +3,13 @@ use crate::core::error::Error;
 use crate::core::object::Object;
 use crate::core::parser::Node;
 use crate::core::parser::Position;
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
+use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
 pub struct Environment {
-    store: BTreeMap<String, Object>,
+    store: Rc<RefCell<BTreeMap<String, Object>>>,
     outer: Option<Box<Environment>>,
 }
 
@@ -23,7 +25,7 @@ impl Clone for Environment {
 impl Environment {
     pub fn new() -> Self {
         let mut env = Environment {
-            store: BTreeMap::new(),
+            store: Rc::new(RefCell::new(BTreeMap::new())),
             outer: None,
         };
         load_builtin_functions(&mut env);
@@ -33,14 +35,14 @@ impl Environment {
     // initialize new scope
     pub fn new_outer(self) -> Self {
         Environment {
-            store: BTreeMap::new(),
+            store: Rc::new(RefCell::new(BTreeMap::new())),
             outer: Some(Box::new(self)),
         }
     }
 
     // get object
     pub fn get(&self, name: &str) -> Option<Object> {
-        match self.store.get(name) {
+        match self.store.borrow().get(name) {
             Some(value) => Some(value.clone()),
             None => match &self.outer {
                 Some(outer) => outer.get(name),
@@ -60,13 +62,17 @@ impl Environment {
                     //println!("SET VALUE.");
                 } else {
                     //println!("NOT FOUND VALUE {} ON OUTER", name);
-                    self.store.insert(name.to_string(), value.clone());
+                    self.store
+                        .borrow_mut()
+                        .insert(name.to_string(), value.clone());
                     //println!("SET VALUE.");
                 }
             }
             None => {
                 //println!("THIS SCOPE IS OUTEST");
-                self.store.insert(name.to_string(), value.clone());
+                self.store
+                    .borrow_mut()
+                    .insert(name.to_string(), value.clone());
                 //println!("SET VALUE.");
             }
         }
@@ -84,13 +90,13 @@ impl Environment {
                     //println!("DROPPED VALUE.");
                 } else {
                     //println!("NOT FOUND VALUE {} ON OUTER", name);
-                    self.store.remove(name);
+                    self.store.borrow_mut().remove(name);
                     //println!("DROPPED VALUE.");
                 }
             }
             None => {
                 //println!("THIS SCOPE IS OUTEST");
-                self.store.remove(name);
+                self.store.borrow_mut().remove(name);
                 //println!("DROPPED VALUE.");
             }
         }
@@ -103,6 +109,7 @@ impl Environment {
         function: fn(Vec<Object>, BTreeMap<String, Object>, Position) -> Result<Object, Error>,
     ) {
         self.store
+            .borrow_mut()
             .insert(name.to_string(), Object::BuiltInFunction(function));
     }
 
