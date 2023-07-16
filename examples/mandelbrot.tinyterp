@@ -52,7 +52,7 @@ loop {
 		
 		x = xmin + dx * ix
 		y = ymin + dy * iy
-		
+
 		if in_mandel([x, y]) {
 			print(".", end="")
 		} else {
