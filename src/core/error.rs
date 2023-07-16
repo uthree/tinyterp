@@ -8,6 +8,7 @@ pub enum Error {
     DivideByZero(String, Position),
     IndexOutOfRange(String, Position),
     ParseError(String, Position),
+    InstructionLimit(String, Position),
 }
 
 pub fn generate_error_message(error: Error, code: &str) -> String {

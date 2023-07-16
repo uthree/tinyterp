@@ -5,10 +5,19 @@ use crate::core::parser::Node;
 use crate::core::parser::Position;
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Environment {
-    store: BTreeMap<String, Object>,
+    store: aTreeMap<String, Object>,
     outer: Option<Box<Environment>>,
+}
+
+impl Clone for Environment {
+    fn clone(&self) -> Self {
+        Environment {
+            store: self.store.clone(),
+            outer: self.outer.clone(),
+        }
+    }
 }
 
 impl Environment {
