@@ -61,6 +61,7 @@ impl Environment {
                 //println!("SET VALUE.");
             }
         }
+        //println!("ENV: {:?}", self);
         value
     }
 

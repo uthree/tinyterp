@@ -11,7 +11,7 @@ pub fn builtin_print(
     pos: Position,
 ) -> Result<Object, Error> {
     // this function takes only one argument.
-    if !kwargs.is_empty() || args.len() != 1 {
+    if args.len() != 1 {
         Err(Error::ArgumentError(
             "function `print` takes only one argument.".to_string(),
             pos,
@@ -27,7 +27,19 @@ pub fn builtin_print(
                 output = arg.to_string();
             }
         }
-        println!("{}", output);
+        let mut end = "\n".to_string();
+        if kwargs.contains_key("end") {
+            let end_obj = kwargs.get("end").unwrap();
+            match end_obj {
+                Object::Str(s) => {
+                    end = s.to_string();
+                }
+                _ => {
+                    end = end_obj.to_string();
+                }
+            }
+        }
+        print!("{}", format!("{}{}", output, end));
         Ok(Object::Str(output))
     }
 }
