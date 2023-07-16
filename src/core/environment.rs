@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, HashMap};
 
 #[derive(Debug, PartialEq)]
 pub struct Environment {
-    store: aTreeMap<String, Object>,
+    store: BTreeMap<String, Object>,
     outer: Option<Box<Environment>>,
 }
 
