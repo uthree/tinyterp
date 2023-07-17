@@ -32,7 +32,13 @@ impl Environment {
         env
     }
 
-    // initialize new scope
+    pub fn detach(mut self) -> Self {
+        self.outer = None;
+        self.store = Arc::new(RefCell::new(self.store.clone().borrow().clone()));
+        self
+    }
+
+    // enter new scope
     pub fn new_outer(self) -> Self {
         Environment {
             store: Arc::new(RefCell::new(BTreeMap::new())),
@@ -359,6 +365,7 @@ impl Environment {
                 mut env,
                 pos: _,
             } => {
+                let mut env = env.clone().detach();
                 // check number of arguments
                 if arg_nodes.len() != args.len() {
                     return Err(Error::ArgumentError(

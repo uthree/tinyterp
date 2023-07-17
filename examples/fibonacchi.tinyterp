@@ -7,15 +7,13 @@ fib = (n, fib=fib) -> {
 	}
 }
 
-n_times_recursive = (n, fn, n_times_recursive=n_times_recursive) -> {
-	if n == 0 {
+print("calculate fibonacchi(1) to fibonacchi(20)")
+
+counter = 1
+loop {
+	if counter > 20 {
 		return
 	}
-	else {
-		n_times_recursive(n - 1, fn)
-		fn(n)
-	}
+	print(str(counter) + " : " + str(fib(counter)))
+	counter = counter + 1
 }
-
-print("calculate fibonacchi(1) to fibonacchi(20)")
-n_times_recursive(20, (n)->{print(fib(n))})
