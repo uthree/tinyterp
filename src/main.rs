@@ -13,6 +13,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 1 {
         // start REPL
+        println!(include_str!("./logo.txt"));
         let mut rt = Runtime::new();
         load_builtin_stdio(&mut rt.env);
 
@@ -20,6 +21,9 @@ fn main() {
             let mut buffer = String::new();
             std::io::stdin().read_line(&mut buffer).unwrap();
             if buffer == "\n" {
+                continue;
+            } else if buffer == "?\n" {
+                println!(include_str!("./help.txt"));
                 continue;
             }
             let result = rt.evaluate(&buffer);

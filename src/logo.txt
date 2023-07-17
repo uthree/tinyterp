@@ -1,0 +1,9 @@
+ 
+  _______ _             _                   |
+ |__   __(_)           | |                  | Tinyterp Interpreter
+    | |   _ _ __  _   _| |_ ___ _ __ _ __   | Repository: https://github.com/uthree/tinyterp
+    | |  | | '_ \| | | | __/ _ \ '__| '_ \  |
+    | |  | | | | | |_| | ||  __/ |  | |_) | | Version 0.1.0
+    |_|  |_|_| |_|\__, |\__\___|_|  | .__/  | type "?" for help
+                   __/ |            | |     |
+                  |___/             |_|     |

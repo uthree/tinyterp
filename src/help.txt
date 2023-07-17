@@ -1,0 +1,5 @@
+When an expression is entered, it is evaluated and displayed.
+
+Example:
+	1 + 1
+	-> 2
