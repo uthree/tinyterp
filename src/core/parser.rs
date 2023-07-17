@@ -242,7 +242,7 @@ peg::parser! {
             / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
-            / _ s:statement() _ newline()? _ {
+            / _ s:statement() _ newline() _ {
                 s
             }
 
