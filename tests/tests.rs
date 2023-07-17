@@ -7,6 +7,11 @@ pub fn run(code: &str) -> String {
 }
 
 #[test]
+fn parse_newline() {
+    run("1\n\n2");
+}
+
+#[test]
 fn nil() {
     assert_eq!(run(""), "nil");
     assert_eq!(run("nil"), "nil");

@@ -83,11 +83,11 @@ const RESERVED_WORDS: [&str; 11] = [
 
 peg::parser! {
     pub grammar tinyterp() for str {
-        rule _ = ignore()*
+        rule _ = ignore()
         rule ignore() = comment()
-            / [' ' | '\t']+
+            / [' ' | '\t']*
         rule comment() = ("#" ([^'\n'])* "\n")
-        rule newline() = (ignore()* [';' | '\n'] ignore()*)+
+        rule newline() = (ignore() [';' | '\n']+ ignore())+
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -227,10 +227,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = _ begin:position!() left_brace() _ right_brace() end:position!() _ newline()? _ {
-                Node::Hash(vec![], Position::new(begin, end))
-            }
-            / _ begin:position!() left_brace() _ newline()* _ seq:(statement() ** newline())  _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            = _ begin:position!() left_brace() _ newline()* _ seq:(statement() ** newline())  _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
             / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
@@ -507,7 +504,7 @@ peg::parser! {
 
         #[cache_left_rec]
         rule function() -> Node
-            = begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() _ seq:sequence() _ end:position!() {
+            = _ begin:position!() left_paren() _ args:arguments_signature() _ right_paren() _ right_arrow() _ seq:expression() end:position!() _ {
                 let (args, kwargs) = args;
                 Node::Function {
                     arguments: args,
