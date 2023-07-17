@@ -131,14 +131,36 @@ impl Object {
 
     pub fn get_attribute(self, index: Self, pos: Position) -> Result<Object, Error> {
         match self {
-            Object::List(v) => match index {
+            Object::List(l) => match index {
                 Object::Int(i) => {
                     let mut idx = i as usize;
                     if i < 0 {
                         idx = (-i) as usize;
                     }
-                    if (i as usize) < v.len() {
-                        Ok(v[idx as usize].clone())
+                    if (i as usize) < l.len() {
+                        Ok(l[idx as usize].clone())
+                    } else {
+                        Err(Error::IndexOutOfRange(
+                            format!("index {} is out of range", i.to_string()),
+                            pos,
+                        ))
+                    }
+                }
+                _ => Err(Error::TypeError(
+                    format!("index must be int, given {}", index.type_name()),
+                    pos,
+                )),
+            },
+            Object::Str(s) => match index {
+                Object::Int(i) => {
+                    let mut idx = i as usize;
+                    if i < 0 {
+                        idx = (-i) as usize;
+                    }
+                    if (i as usize) < s.len() {
+                        Ok(Object::Str(
+                            s.chars().collect::<Vec<char>>()[i as usize].to_string(),
+                        ))
                     } else {
                         Err(Error::IndexOutOfRange(
                             format!("index {} is out of range", i.to_string()),
