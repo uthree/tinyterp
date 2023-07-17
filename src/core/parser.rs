@@ -190,7 +190,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         pub rule program() -> Node
-            = _ begin:position!() _ newline()? _ seq:sequence()* _ newline()? end:position!() _ {
+            = _ begin:position!() _ newline()? _ seq:(sequence() ** newline()) _ newline()? end:position!() _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
@@ -230,10 +230,10 @@ peg::parser! {
             = _ begin:position!() left_brace() _ right_brace() end:position!() _ newline()? _ {
                 Node::Hash(vec![], Position::new(begin, end))
             }
-            / _ begin:position!() left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() left_brace() _ newline()* _ seq:(statement() ** newline())  _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:sequence()* _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
                 Node::Loop(seq, Position::new(begin, end))
             }
             / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
@@ -242,13 +242,13 @@ peg::parser! {
             / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
-            / _ s:statement() _ newline()? _ {
+            / _ s:statement() _ {
                 s
             }
 
         #[cache_left_rec]
         rule statement() -> Node
-            = expression()
+            = e:expression()
 
         #[cache_left_rec]
         rule expression() -> Node
