@@ -87,7 +87,7 @@ peg::parser! {
         rule ignore() = comment()
             / [' ' | '\t']*
         rule comment() = ("#" ([^'\n'])* "\n")
-        rule newline() = (ignore() [';' | '\n']+ ignore())+
+        rule newline() = (ignore()? [';' | '\n']+ ignore()?)+
 
         // Tokens and keywords
         rule left_paren() = "("
@@ -190,7 +190,7 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         pub rule program() -> Node
-            = _ begin:position!() _ newline()? _ seq:(sequence() ** newline()) _ newline()? end:position!() _ {
+            = _ begin:position!() _ newline()? _ seq:(sequence() ** newline()) _ newline()? _ end:position!() {
                 Node::Sequence(seq, Position::new(begin, end))
             }
 
@@ -227,39 +227,39 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = _ begin:position!() left_brace() _ newline()? _ seq:(sequence() ** newline())  _ newline()? _ right_brace() end:position!() _ newline()? _ {
+            = _ begin:position!() left_brace() _ newline()? _ seq:(sequence() ** newline()) _ newline()? _ right_brace() end:position!()  {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / _ begin:position!() keyword_loop() _ left_brace() _ newline()? _ seq:(sequence() ** newline()) _ newline()? _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_loop() newline()? _ left_brace() _ newline()? _ seq:(sequence() ** newline()) _ newline()? _ right_brace() end:position!() {
                 Node::Loop(seq, Position::new(begin, end))
             }
-            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_if() _ condition:sequence() newline()? _ keyword_then()? newline()? _ expr_true:sequence() newline()? _ keyword_else() _ newline()? _ expr_false:sequence() end:position!() _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(expr_false), Position::new(begin, end))
             }
-            / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_if() _ condition:sequence() newline()? _ keyword_then()? newline()? _ expr_true:sequence() end:position!() _ {
                 Node::IfElse(Box::new(condition), Box::new(expr_true), Box::new(Node::Sequence(vec![], Position::new(begin, end))), Position::new(begin, end))
             }
-            / _ s:statement() _ {
-                s
-            }
+            / statement()
 
         #[cache_left_rec]
         rule statement() -> Node
-            = e:expression()
+            = _ e:expression() _ {
+                e
+            }
 
         #[cache_left_rec]
         rule expression() -> Node
-            = e:return_or_drop()
+            = return_or_drop()
 
         #[cache_left_rec]
         rule return_or_drop() -> Node
-            = begin:position!() keyword_return() _ expr:expression() end:position!() {
+            = _ begin:position!() keyword_return() _ expr:expression() end:position!() _ {
                 Node::Return(Box::new(expr), Position::new(begin, end))
             }
-            / begin:position!() keyword_return() end:position!() {
+            / _ begin:position!() keyword_return() end:position!() _ {
                 Node::Return(Box::new(Node::Nil(Position::new(begin, end))), Position::new(begin, end))
             }
-            / begin:position!() keyword_drop() _ identifiers:(identifier() ++ (_ comma() _)) _ end:position!() {
+            / _ begin:position!() keyword_drop() _ identifiers:(identifier() ++ (_ comma() _)) _ end:position!() _ {
                 let mut variable_names = vec![];
                 for identifier in identifiers {
                     if let Node::Identifier(s, _) = identifier {
