@@ -227,10 +227,10 @@ peg::parser! {
         // Statements
         #[cache_left_rec]
         rule sequence() -> Node
-            = _ begin:position!() left_brace() _ newline()* _ seq:(statement() ** newline())  _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            = _ begin:position!() left_brace() _ newline()? _ seq:(sequence() ** newline())  _ newline()? _ right_brace() end:position!() _ newline()? _ {
                 Node::Sequence(seq, Position::new(begin, end))
             }
-            / _ begin:position!() keyword_loop() _ left_brace() _ newline()* _ seq:(sequence() ** newline()) _ (_ newline() _)* _ right_brace() end:position!() _ newline()? _ {
+            / _ begin:position!() keyword_loop() _ left_brace() _ newline()? _ seq:(sequence() ** newline()) _ newline()? _ right_brace() end:position!() _ newline()? _ {
                 Node::Loop(seq, Position::new(begin, end))
             }
             / _ begin:position!() keyword_if() _ condition:expression() _ keyword_then()? _ expr_true:sequence() _ keyword_else() _ expr_false:sequence() end:position!() _ newline()? _ {
