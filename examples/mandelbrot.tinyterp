@@ -21,12 +21,12 @@ in_mandel = (pos, n=50) -> {
 	loop {
 		if zabs(z) > 2.0 {
 			# break the loop and return true
-			return return true
+			return return zabs(z)
 		}
 		z = zadd(zmul(z, z), pos)
 		if counter > n {
 			# break the loop and return false
-			return return false
+			return return zabs(z)
 		}
 		counter = counter + 1
 	}
@@ -53,9 +53,20 @@ loop {
 		x = xmin + dx * ix
 		y = ymin + dy * iy
 
-		if in_mandel([x, y]) {
+		v = in_mandel([x, y])
+		if v >= 3.0 {
+			print(" ", end="")
+		}
+		else if v >= 2.6 {
 			print(".", end="")
-		} else {
+		}
+		else if v >= 2.3 {
+			print(":", end="")
+		}
+		else if v >= 2.0 {
+			print("*", end="")
+		}
+		else {
 			print("#", end="")
 		}
 
