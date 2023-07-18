@@ -359,6 +359,7 @@ impl Environment {
                 func(args_vec, kwargs_hash, pos_call)
             }
             Object::Function {
+                name,
                 args,
                 kwargs,
                 body,
@@ -417,6 +418,7 @@ impl Environment {
         pos: Position,
     ) -> Result<Object, Error> {
         Ok(Object::Function {
+            name: None,
             args: args.to_vec(),
             kwargs,
             body: sequence,

@@ -3,7 +3,9 @@ use crate::core::error::Error;
 use crate::core::parser::Node;
 use crate::core::parser::Position;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
@@ -13,8 +15,9 @@ pub enum Object {
     Float(f64),
     Str(String),
     List(Vec<Object>),
-    Hash(HashMap<String, Object>),
+    Hash(Vec<Object>, Vec<Object>),
     Function {
+        name: Option<String>,
         args: Vec<String>,
         kwargs: HashMap<String, Node>,
         body: Node,
@@ -54,6 +57,7 @@ impl std::fmt::Display for Object {
                     .join(", ")
             )?,
             Object::Function {
+                name: _,
                 args: _,
                 kwargs: _,
                 body: _,
@@ -83,9 +87,10 @@ impl Object {
             Object::Int(_) => "int",
             Object::Str(_) => "str",
             Object::List(_) => "list",
-            Object::Hash(_) => "hash",
+            Object::Hash(_, _) => "hash",
             Object::BuiltInFunction(_) => "function",
             Object::Function {
+                name: _,
                 args: _,
                 kwargs: _,
                 body: _,
