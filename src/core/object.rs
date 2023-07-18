@@ -37,7 +37,13 @@ impl std::fmt::Display for Object {
                 }
             }
             Object::Int(i) => write!(f, "{}", i)?,
-            Object::Float(v) => write!(f, "{}", v)?,
+            Object::Float(v) => {
+                if v.to_string().contains(".") {
+                    write!(f, "{}", v)?
+                } else {
+                    write!(f, "{}.0", v)?
+                }
+            }
             Object::Str(s) => write!(f, "{:?}", s)?,
             Object::List(l) => write!(
                 f,
